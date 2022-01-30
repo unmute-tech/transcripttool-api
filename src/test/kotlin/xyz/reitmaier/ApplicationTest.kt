@@ -13,4 +13,13 @@ class ApplicationTest {
     assertEquals(HttpStatusCode.OK, response.status)
     assertEquals("Hello World!", response.bodyAsText())
   }
+
+  @Test
+  fun testAuth() = testApplication {
+    val response = client.get("/protected/route/basic") {
+      basicAuth("auth1","auth1")
+    }
+    assertEquals(HttpStatusCode.OK, response.status)
+    assertEquals("Hello auth1", response.bodyAsText())
+  }
 }
