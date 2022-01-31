@@ -1,0 +1,14 @@
+import org.joda.time.LocalDateTime;
+import xyz.reitmaier.transcribe.data.Email;
+import xyz.reitmaier.transcribe.data.Password;
+import xyz.reitmaier.transcribe.data.UserId;
+
+-- user is reserved word in postgres -> users
+CREATE TABLE IF NOT EXISTS users
+(
+    id SERIAL8 AS UserId PRIMARY KEY,
+    email VARCHAR AS Email NOT NULL UNIQUE,
+    password VARCHAR AS Password NOT NULL,
+    created_at TIMESTAMP AS LocalDateTime NOT NULL DEFAULT CURRENT_TIMESTAMP
+--     fcm_token  TEXT AS FcmToken
+);

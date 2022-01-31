@@ -15,6 +15,13 @@ plugins {
   id("com.squareup.sqldelight") version "1.5.3"
 }
 
+sqldelight {
+  database("TranscribeDb") {
+    packageName = "xyz.reitmaier.transcribe.db"
+    dialect = "postgresql"
+    deriveSchemaFromMigrations = true
+  }
+}
 group = "xyz.reitmaier"
 version = "0.0.1"
 application {
@@ -46,6 +53,9 @@ dependencies {
   implementation("com.squareup.sqldelight:runtime-jvm:$sqldelight_version")
   implementation("com.squareup.sqldelight:jdbc-driver:$sqldelight_version")
   implementation("com.squareup.sqldelight:coroutines-extensions:$sqldelight_version")
+
+  // utilities
+  implementation("joda-time:joda-time:2.10.13")
 
   // logging
   implementation("ch.qos.logback:logback-classic:$logback_version")
