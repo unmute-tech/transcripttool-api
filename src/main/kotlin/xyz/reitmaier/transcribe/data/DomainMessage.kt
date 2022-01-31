@@ -7,6 +7,7 @@ sealed class DomainMessage(val message: String)
 
 object DuplicateUser : DomainMessage("Duplicate user")
 object UserNotFound : DomainMessage("User not found")
+object EmailOrPasswordIncorrect : DomainMessage("Email or password is incorrect")
 object PasswordIncorrect : DomainMessage("The password is incorrect")
 object InvalidRequest : DomainMessage("The request is invalid")
 

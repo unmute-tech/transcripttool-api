@@ -32,8 +32,10 @@ data class JWTConfig(
   }
 }
 
+
 fun Application.configureRouting(repo: TranscribeRepo,
-                                 jwtConfig: JWTConfig = JWTConfig.from(environment.config)) {
+                                 jwtConfig: JWTConfig = JWTConfig.from(environment.config)
+) {
   val log = InlineLogger()
   authentication {
     jwt("auth-jwt") {
@@ -46,22 +48,12 @@ fun Application.configureRouting(repo: TranscribeRepo,
           .build()
       )
       validate { credential ->
-        if (credential.payload.getClaim("email").asString() != "") {
-          JWTPrincipal(credential.payload)
-        } else {
-          null
-        }
-//        log.info { "validating $credential" }
-//
-//        // Parse Email
-//        val email = Email(credential.payload.getClaim("email").asString())
-//
-//        // Check if user with email exists
-//        // TODO also parse password
-//        repo.findUserByEmail(email).fold(
-//          success = { JWTPrincipal(credential.payload) },
-//          failure = {null},
-//        )
+        val email = Email(credential.payload.getClaim("email").asString())
+        if(repo.findUserByEmail(email).get() != null) {
+            JWTPrincipal(credential.payload)
+          } else {
+            null
+          }
       }
     }
   }
@@ -84,20 +76,21 @@ fun Application.configureRouting(repo: TranscribeRepo,
     post("/login") {
       val user = call.receive<User>()
       log.info { "Login request $user"}
-        repo.authenticateUser(user)
-          .map {
-            JWT.create()
-              .withAudience(jwtConfig.audience)
-              .withIssuer(jwtConfig.issuer)
-              .withClaim("email", user.email.value)
-              .withExpiresAt(Date(System.currentTimeMillis() + 600000))
-              .sign(Algorithm.HMAC256(jwtConfig.secret))
-          }
-          .fold(
+      repo.findUserByEmailAndPassword(user)
+        .map {
+          JWT.create()
+            .withAudience(jwtConfig.audience)
+            .withIssuer(jwtConfig.issuer)
+            .withClaim("email", user.email.value)
+            .withExpiresAt(Date(System.currentTimeMillis() + 600000))
+            .sign(Algorithm.HMAC256(jwtConfig.secret))
+        }
+        .fold(
           success = { call.respond(hashMapOf("token" to it)) },
           failure = { call.respondDomainMessage(it)},
         )
     }
+
     authenticate("auth-jwt") {
       get("/auth-test") {
         val principal = call.principal<JWTPrincipal>()
@@ -115,7 +108,8 @@ suspend fun ApplicationCall.respondDomainMessage(domainMessage: DomainMessage) {
     DatabaseError ->  respond(HttpStatusCode.InternalServerError,domainMessage.message)
     DuplicateUser -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     InvalidRequest -> respond(HttpStatusCode.BadRequest, domainMessage.message)
-    // TODO check if appropriate to surface this error type
     UserNotFound -> respond(HttpStatusCode.NotFound, domainMessage.message)
+    PasswordIncorrect -> respond(HttpStatusCode.Forbidden, domainMessage.message)
+    EmailOrPasswordIncorrect -> TODO()
   }
 }

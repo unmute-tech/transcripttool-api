@@ -15,7 +15,6 @@ fun Application.module(testing: Boolean = false) {
   val passwordEncryptor = PasswordEncryptor(jwtConfig)
   val db = configureDB()
   val repo = TranscribeRepo(db, passwordEncryptor)
-  configureAuth(repo)
   configureRouting(repo)
   configureHTTP()
   configureSerialization()

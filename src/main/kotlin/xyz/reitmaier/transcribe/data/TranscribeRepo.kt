@@ -12,7 +12,6 @@ class TranscribeRepo(db: TranscribeDb, val passwordEncryptor: PasswordEncryptor)
 
   fun insertUser(email: Email, password: Password) : DomainResult<User_Entity> = runCatching {
     val encryptedPassword = passwordEncryptor.encrypt(password)
-
     queries.addUser(email, encryptedPassword)
   }.mapError { DuplicateUser }
     .andThen {
@@ -23,14 +22,8 @@ class TranscribeRepo(db: TranscribeDb, val passwordEncryptor: PasswordEncryptor)
     queries.findUserByEmail(email).executeAsOne()
   }.mapError { UserNotFound }
 
-  fun authenticateUser(user: User) : DomainResult<User_Entity> =
-    runCatching {
-      queries.findUserByEmail(user.email).executeAsOne()
-    }.mapError { UserNotFound }
-      .andThen {
-        if(it.password == passwordEncryptor.encrypt(user.password))
-          Ok(it)
-        else
-          Err(PasswordIncorrect)
-      }
+  fun findUserByEmailAndPassword(user: User) : DomainResult<User_Entity> = runCatching {
+    queries.findUserByEmailAndPassword(user.email, passwordEncryptor.encrypt(user.password)).executeAsOne()
+  }.mapError { EmailOrPasswordIncorrect }
+
 }
