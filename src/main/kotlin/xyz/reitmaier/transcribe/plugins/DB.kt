@@ -10,12 +10,9 @@ import org.joda.time.LocalDateTime
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.format.DateTimeFormatter
 import org.postgresql.Driver
-import xyz.reitmaier.transcribe.data.migrateIfNeeded
+import xyz.reitmaier.transcribe.data.*
 import xyz.reitmaier.transcribe.db.TranscribeDb
-import xyz.reitmaier.transcribe.db.Users
-import xyz.reitmaier.transcribe.data.Email
-import xyz.reitmaier.transcribe.data.Password
-import xyz.reitmaier.transcribe.data.UserId
+import xyz.reitmaier.transcribe.db.User_Entity
 import javax.sql.DataSource
 
 fun Application.configureDB(): TranscribeDb {
@@ -49,10 +46,10 @@ fun Application.configureDB(): TranscribeDb {
 
   val db = TranscribeDb(
     driver = driver,
-    usersAdapter = Users.Adapter(
+    User_EntityAdapter = User_Entity.Adapter(
       idAdapter = userIdAdapter,
       emailAdapter = emailAdapter,
-      passwordAdapter = passwordAdapter,
+      passwordAdapter = encryptedPasswordAdapter,
       created_atAdapter = timestampAdapter
     )
   )
@@ -74,9 +71,9 @@ private val emailAdapter = object : ColumnAdapter<Email, String> {
   override fun encode(value: Email) = value.value
 }
 
-private val passwordAdapter = object : ColumnAdapter<Password, String> {
-  override fun decode(databaseValue: String) = Password(databaseValue)
-  override fun encode(value: Password) = value.value
+private val encryptedPasswordAdapter = object : ColumnAdapter<EncryptedPassword, String> {
+  override fun decode(databaseValue: String) = EncryptedPassword(databaseValue)
+  override fun encode(value: EncryptedPassword) = value.value
 }
 
 private val timestampAdapter = object : ColumnAdapter<LocalDateTime, String> {

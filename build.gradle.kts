@@ -37,6 +37,7 @@ dependencies {
   // ktor
   implementation("io.ktor:ktor-server-core:$ktor_version")
   implementation("io.ktor:ktor-server-auth:$ktor_version")
+  implementation("io.ktor:ktor-server-auth-jwt:$ktor_version")
   implementation("io.ktor:ktor-server-content-negotiation:$ktor_version")
   implementation("io.ktor:ktor-server-default-headers:$ktor_version")
   implementation("io.ktor:ktor-server-partial-content:$ktor_version")
@@ -58,6 +59,7 @@ dependencies {
   implementation("joda-time:joda-time:2.10.13")
 
   // logging
+  implementation("io.ktor:ktor-server-call-logging:$ktor_version")
   implementation("ch.qos.logback:logback-classic:$logback_version")
   implementation("com.michael-bull.kotlin-inline-logger:kotlin-inline-logger:1.0.4")
 

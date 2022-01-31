@@ -1,18 +1,20 @@
 package xyz.reitmaier
 
+import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import io.ktor.client.utils.EmptyContent.contentType
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.plugins.*
 import kotlin.test.*
 import io.ktor.server.testing.*
+import io.netty.handler.codec.http.HttpHeaders.addHeader
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import xyz.reitmaier.transcribe.data.DuplicateUser
-import xyz.reitmaier.transcribe.data.Email
-import xyz.reitmaier.transcribe.data.NewUserRequest
-import xyz.reitmaier.transcribe.data.Password
+import xyz.reitmaier.transcribe.data.*
 
 class ApplicationTest {
   @Test
@@ -23,20 +25,8 @@ class ApplicationTest {
   }
 
   @Test
-  fun testAuth() = testApplication {
-    val response = client.get("/protected/route/basic") {
-      basicAuth("auth1","auth1")
-    }
-    assertEquals(HttpStatusCode.OK, response.status)
-    assertEquals("Hello auth1", response.bodyAsText())
-  }
-
-  @Test
   fun testRegister() = testApplication {
     val client = createClient {
-//      install(ContentNegotiation) {
-//        json()
-//      }
       expectSuccess = false
     }
       val response = client.post("/register") {
@@ -46,4 +36,50 @@ class ApplicationTest {
     assertEquals(DuplicateUser.message, response.bodyAsText())
     assertEquals(HttpStatusCode.BadRequest, response.status)
   }
+
+  @Test
+  fun `login test`() = testApplication {
+
+    val client = createClient {
+      expectSuccess = false
+    }
+    val response = client.post("/login") {
+      contentType(ContentType.Application.Json)
+      setBody(Json.encodeToString(User(Email("test@email.com"), Password("bla"))))
+    }
+    assertEquals(HttpStatusCode.OK, response.status)
+    val hashMap = Json.decodeFromString<HashMap<String,String>>(response.bodyAsText())
+    assertContains(hashMap,"token")
+  }
+
+  @Test
+  fun `auth declined test`() = testApplication {
+    val client = createClient {
+      expectSuccess = false
+    }
+    val response = client.get("/auth-test") {
+    }
+    assertEquals(HttpStatusCode.Unauthorized, response.status)
+  }
+
+  @Test
+  fun `auth test`() = testApplication {
+    val token = client.loginToken()
+    val response = client.get("/auth-test") {
+      bearerAuth(token)
+    }
+    assertEquals(HttpStatusCode.OK, response.status)
+  }
+
+}
+
+private suspend fun HttpClient.loginToken() : String {
+  val response = post("/login") {
+    contentType(ContentType.Application.Json)
+    setBody(Json.encodeToString(User(Email("test@email.com"), Password("bla"))))
+  }
+  val hashMap = Json.decodeFromString<HashMap<String,String>>(response.bodyAsText())
+  assertContains(hashMap,"token")
+
+  return hashMap["token"]!!
 }
