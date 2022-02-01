@@ -1,11 +1,14 @@
 addUser:
-INSERT INTO User_Entity(email, password) VALUES (?,?) RETURNING id;
-
-addUserReturning:
-INSERT INTO User_Entity(id, email, password, created_at) VALUES (?,?, ?, ?) RETURNING id;
+INSERT INTO user(email, password) VALUES (?,?);
 
 findUserByEmail:
-SELECT * FROM User_Entity WHERE email = ? LIMIT 1;
+SELECT * FROM user WHERE email = ? LIMIT 1;
+
+findUserById:
+SELECT * FROM user WHERE id = ? LIMIT 1;
 
 findUserByEmailAndPassword:
-SELECT * FROM User_Entity WHERE email = ? AND password = ? LIMIT 1;
+SELECT * FROM user WHERE email = ? AND password = ? LIMIT 1;
+
+lastInsertedIdAsLong:
+SELECT LAST_INSERT_ID();

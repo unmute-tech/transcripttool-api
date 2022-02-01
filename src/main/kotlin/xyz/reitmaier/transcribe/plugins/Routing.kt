@@ -74,14 +74,14 @@ fun Application.configureRouting(repo: TranscribeRepo,
         )
     }
     post("/login") {
-      val user = call.receive<User>()
-      log.info { "Login request $user"}
-      repo.findUserByEmailAndPassword(user)
+      val userAccount = call.receive<UserAccount>()
+      log.info { "Login request $userAccount"}
+      repo.findUserByEmailAndPassword(userAccount)
         .map {
           JWT.create()
             .withAudience(jwtConfig.audience)
             .withIssuer(jwtConfig.issuer)
-            .withClaim("email", user.email.value)
+            .withClaim("email", userAccount.email.value)
             .withExpiresAt(Date(System.currentTimeMillis() + 600000))
             .sign(Algorithm.HMAC256(jwtConfig.secret))
         }
@@ -110,6 +110,6 @@ suspend fun ApplicationCall.respondDomainMessage(domainMessage: DomainMessage) {
     InvalidRequest -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     UserNotFound -> respond(HttpStatusCode.NotFound, domainMessage.message)
     PasswordIncorrect -> respond(HttpStatusCode.Forbidden, domainMessage.message)
-    EmailOrPasswordIncorrect -> TODO()
+    EmailOrPasswordIncorrect -> respond(HttpStatusCode.Forbidden, domainMessage.message)
   }
 }

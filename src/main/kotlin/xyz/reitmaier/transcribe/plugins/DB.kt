@@ -1,5 +1,7 @@
 package xyz.reitmaier.transcribe.plugins
 
+//import org.postgresql.Driver
+import com.mysql.cj.jdbc.Driver
 import com.squareup.sqldelight.ColumnAdapter
 import com.squareup.sqldelight.db.SqlDriver
 import com.squareup.sqldelight.sqlite.driver.asJdbcDriver
@@ -9,10 +11,9 @@ import io.ktor.server.application.*
 import org.joda.time.LocalDateTime
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.format.DateTimeFormatter
-import org.postgresql.Driver
 import xyz.reitmaier.transcribe.data.*
 import xyz.reitmaier.transcribe.db.TranscribeDb
-import xyz.reitmaier.transcribe.db.User_Entity
+import xyz.reitmaier.transcribe.db.User
 import javax.sql.DataSource
 
 fun Application.configureDB(): TranscribeDb {
@@ -25,9 +26,10 @@ fun Application.configureDB(): TranscribeDb {
   val maxPoolSize = dbConfig.property("maxPoolSize").getString().toInt()
   val testing = dbConfig.propertyOrNull("testing")
 
-  // See https://github.com/AlecStrong/sql-psi/issues/153
-  // Re: ?stringtype=unspecified
-  val url = "jdbc:postgresql://$host:$port/$database?stringtype=unspecified"
+//  See https://github.com/AlecStrong/sql-psi/issues/153
+//  Re: ?stringtype=unspecified
+//  val jdbcUrl = "jdbc:postgresql://$host:$port/$database?stringtype=unspecified"
+  val url = "jdbc:mysql://$host:$port/$database"
 
   val datasourceConfig = HikariConfig().apply {
     jdbcUrl = url
@@ -42,28 +44,41 @@ fun Application.configureDB(): TranscribeDb {
   val dataSource : DataSource = HikariDataSource(datasourceConfig)
   val driver : SqlDriver = dataSource.asJdbcDriver()
 
-  driver.migrateIfNeeded(TranscribeDb.Schema)
 
   val db = TranscribeDb(
     driver = driver,
-    User_EntityAdapter = User_Entity.Adapter(
+    userAdapter = User.Adapter(
       idAdapter = userIdAdapter,
       emailAdapter = emailAdapter,
       passwordAdapter = encryptedPasswordAdapter,
       created_atAdapter = timestampAdapter
-    )
+    ),
   )
+  driver.migrate(db)
 
   environment.monitor.subscribe(ApplicationStopped) { driver.close() }
 
   return db
 
 }
-private val timestampFormat: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSSSSS")
+private fun SqlDriver.migrate(database: TranscribeDb) {
+  // Settings table is version 2
+  TranscribeDb.Schema.migrate(this, 1, 2)
+  val settings = database.settingsQueries.getSettings().executeAsOne()
+  val dbVersion = settings.version
+  val schemaVersion = TranscribeDb.Schema.version
+  println("Current db version: $dbVersion")
+  for (version in (dbVersion until schemaVersion)) {
+    println("Migrating to ${version + 1}")
+    TranscribeDb.Schema.migrate(this, version, version + 1)
+    database.settingsQueries.setVersion(version + 1)
+  }
+}
+private val timestampFormat: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")
 
-private val userIdAdapter = object : ColumnAdapter<UserId, Long> {
-  override fun decode(databaseValue: Long): UserId = UserId(databaseValue)
-  override fun encode(value: UserId): Long = value.value
+private val userIdAdapter = object : ColumnAdapter<UserId, Int> {
+  override fun decode(databaseValue: Int): UserId = UserId(databaseValue)
+  override fun encode(value: UserId): Int = value.value
 }
 
 private val emailAdapter = object : ColumnAdapter<Email, String> {

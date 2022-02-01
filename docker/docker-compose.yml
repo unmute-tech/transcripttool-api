@@ -8,6 +8,7 @@ services:
     restart: always
     depends_on:
       - postgres-transcribe
+      - mariadb-transcribe
     ports:
       - "8082:8080"
 
@@ -27,5 +28,22 @@ services:
       - postgres-transcribe-data:/var/lib/postgresql
     command: ["postgres", "-c", "log_statement=all"]
 
+  mariadb-transcribe:
+    image: mariadb:latest
+    container_name: mariadb-transcribe
+    ports:
+      - "3307:3306"
+    environment:
+      # TODO Make these into env variables MYSQL_PASSWORD=${MARIADB_PASSWORD}
+      - MYSQL_DATABASE=transcribe
+      - MYSQL_USER=transcribe
+      - MYSQL_PASSWORD=transcribe
+      - MYSQL_ROOT_PASSWORD=transcribe
+    volumes:
+      - mariadb_transcribe_data:/var/lib/mysql
+    command: --default-storage-engine innodb
+    restart: unless-stopped
+
 volumes:
   postgres-transcribe-data:
+  mariadb_transcribe_data:

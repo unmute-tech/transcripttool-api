@@ -18,8 +18,10 @@ plugins {
 sqldelight {
   database("TranscribeDb") {
     packageName = "xyz.reitmaier.transcribe.db"
-    dialect = "postgresql"
+    dialect = "mysql"
     deriveSchemaFromMigrations = true
+//    migrationOutputDirectory = file("$buildDir/resources/main/migrations")
+//    migrationOutputFileFormat = ".sql"
   }
 }
 group = "xyz.reitmaier"
@@ -48,7 +50,10 @@ dependencies {
   implementation("com.zaxxer:HikariCP:$hikaricp_version")
 
   // db -- postgres
-  implementation("org.postgresql:postgresql:$postgres_version")
+//  implementation("org.postgresql:postgresql:$postgres_version")
+
+  // db -- mysql
+  implementation("mysql:mysql-connector-java:8.0.28")
 
   // db -- sqldelight
   implementation("com.squareup.sqldelight:runtime-jvm:$sqldelight_version")

@@ -19,7 +19,20 @@ object UserIdSerializer : KSerializer<UserId> {
   }
 
   override fun deserialize(decoder: Decoder): UserId {
-    return UserId(decoder.decodeLong())
+    return UserId(decoder.decodeInt())
+  }
+}
+
+object TaskIdSerializer : KSerializer<TaskId> {
+  override val descriptor: SerialDescriptor
+    get() = PrimitiveSerialDescriptor("data.TaskId", PrimitiveKind.STRING)
+
+  override fun serialize(encoder: Encoder, value: TaskId) {
+    encoder.encodeString(value.value.toString())
+  }
+
+  override fun deserialize(decoder: Decoder): TaskId {
+    return TaskId(decoder.decodeInt())
   }
 }
 

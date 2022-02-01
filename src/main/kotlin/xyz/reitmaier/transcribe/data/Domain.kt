@@ -14,14 +14,18 @@ data class NewUserRequest(
 )
 
 @Serializable
-data class User(val email: Email, val password: Password)
+data class UserAccount(val email: Email, val password: Password)
 /*
 INLINES
  */
 
+@Serializable(with = TaskIdSerializer::class)
+@JvmInline
+value class TaskId(val value: Int)
+
 @Serializable(with = UserIdSerializer::class)
 @JvmInline
-value class UserId(val value: Long)
+value class UserId(val value: Int)
 
 @Serializable(with = PasswordSerializer::class)
 @JvmInline
