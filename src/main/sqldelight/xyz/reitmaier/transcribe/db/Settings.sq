@@ -3,3 +3,6 @@ SELECT * FROM settings;
 
 setVersion:
 UPDATE settings SET version = :version;
+
+lastInsertedIdAsLong:
+SELECT LAST_INSERT_ID();

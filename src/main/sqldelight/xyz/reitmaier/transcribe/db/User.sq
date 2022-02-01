@@ -10,5 +10,3 @@ SELECT * FROM user WHERE id = ? LIMIT 1;
 findUserByEmailAndPassword:
 SELECT * FROM user WHERE email = ? AND password = ? LIMIT 1;
 
-lastInsertedIdAsLong:
-SELECT LAST_INSERT_ID();

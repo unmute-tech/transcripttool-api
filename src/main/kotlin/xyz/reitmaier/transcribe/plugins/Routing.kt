@@ -4,6 +4,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.github.michaelbull.logging.InlineLogger
 import com.github.michaelbull.result.*
+import com.github.michaelbull.result.coroutines.binding.binding
 import io.ktor.http.*
 import io.ktor.server.routing.*
 import io.ktor.server.application.*
@@ -13,7 +14,6 @@ import io.ktor.server.config.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import xyz.reitmaier.transcribe.data.*
-import java.util.*
 
 data class JWTConfig(
   val audience: String,
@@ -62,7 +62,7 @@ fun Application.configureRouting(repo: TranscribeRepo,
       call.respondText("Hello World!")
     }
     post("/register") {
-      call.receiveOrNull<NewUserRequest>().toResultOr { InvalidRequest }
+      call.receiveOrNull<CreateUserRequest>().toResultOr { InvalidRequest }
         .andThen { repo.insertUser(it.email, it.password) }
         .fold(
           success = {
@@ -82,7 +82,8 @@ fun Application.configureRouting(repo: TranscribeRepo,
             .withAudience(jwtConfig.audience)
             .withIssuer(jwtConfig.issuer)
             .withClaim("email", userAccount.email.value)
-            .withExpiresAt(Date(System.currentTimeMillis() + 600000))
+            // TODO possibly expire tokens
+//            .withExpiresAt(Date(System.currentTimeMillis() + 600000))
             .sign(Algorithm.HMAC256(jwtConfig.secret))
         }
         .fold(
@@ -93,19 +94,37 @@ fun Application.configureRouting(repo: TranscribeRepo,
 
     authenticate("auth-jwt") {
       get("/auth-test") {
-        val principal = call.principal<JWTPrincipal>()
-        val email = principal!!.payload.getClaim("email").asString()
-        val expiresAt = principal.expiresAt?.time?.minus(System.currentTimeMillis())
-        log.info { "Authenticated $email. Token expires in $expiresAt ms"}
-        call.respondText("Hello, $email! Token is expired at $expiresAt ms.")
+        val email = call.authenticatedUserEmail()
+        call.respondText("Hello, $email!")
+      }
+
+
+      post("/task") {
+        val email = call.authenticatedUserEmail()
+        binding <TaskDto, DomainMessage> {
+          val user = repo.findUserByEmail(email).bind()
+          val taskRequest = call.receiveOrNull<CreateTaskRequest>().toResultOr { InvalidRequest }.bind()
+          repo.insertTask(user.id, displayName = taskRequest.displayName, length = taskRequest.lengthMs, path = taskRequest.displayName, provenance = TaskProvenance.REMOTE).bind().toDto()
+        }.fold(
+          success = { call.respond(HttpStatusCode.Created, it) },
+          failure = { call.respondDomainMessage(it)}
+        )
       }
     }
   }
 }
 
+fun ApplicationCall.authenticatedUserEmail() : Email {
+  val principal = principal<JWTPrincipal>()
+  val email = principal!!.payload.getClaim("email").asString()
+  val expiresAt = principal.expiresAt?.time?.minus(System.currentTimeMillis())
+  return Email(email)
+}
+
 suspend fun ApplicationCall.respondDomainMessage(domainMessage: DomainMessage) {
   when(domainMessage) {
     DatabaseError ->  respond(HttpStatusCode.InternalServerError,domainMessage.message)
+    DuplicateFile -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     DuplicateUser -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     InvalidRequest -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     UserNotFound -> respond(HttpStatusCode.NotFound, domainMessage.message)

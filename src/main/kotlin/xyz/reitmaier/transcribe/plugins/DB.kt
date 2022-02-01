@@ -105,7 +105,7 @@ private val encryptedPasswordAdapter = object : ColumnAdapter<EncryptedPassword,
   override fun encode(value: EncryptedPassword) = value.value
 }
 
-private val timestampAdapter = object : ColumnAdapter<LocalDateTime, String> {
+val timestampAdapter = object : ColumnAdapter<LocalDateTime, String> {
   override fun decode(databaseValue: String) = LocalDateTime.parse(databaseValue, timestampFormat)
   override fun encode(value: LocalDateTime) = value.toString(timestampFormat)
 }

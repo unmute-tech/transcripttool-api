@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS task
     id INT AS TaskId NOT NULL PRIMARY KEY AUTO_INCREMENT,
     user_id INT AS UserId NOT NULL REFERENCES user(id),
     path VARCHAR(255) NOT NULL,
-    length INT NOT NULL,
+    length BIGINT NOT NULL,
     provenance VARCHAR(255) AS TaskProvenance NOT NULL,
     display_name VARCHAR(255) NOT NULL,
     created_at TIMESTAMP AS LocalDateTime NOT NULL DEFAULT CURRENT_TIMESTAMP,

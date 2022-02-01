@@ -6,6 +6,7 @@ package xyz.reitmaier.transcribe.data
 sealed class DomainMessage(val message: String)
 
 object DuplicateUser : DomainMessage("Duplicate user")
+object DuplicateFile : DomainMessage("File already exists")
 object UserNotFound : DomainMessage("User not found")
 object EmailOrPasswordIncorrect : DomainMessage("Email or password is incorrect")
 object PasswordIncorrect : DomainMessage("The password is incorrect")

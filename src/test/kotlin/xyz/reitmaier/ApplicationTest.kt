@@ -26,7 +26,7 @@ class ApplicationTest {
     }
       val response = client.post("/register") {
         contentType(ContentType.Application.Json)
-        setBody(Json.encodeToString(NewUserRequest(Email("test@email.com"), Password("bla"))))
+        setBody(Json.encodeToString(CreateUserRequest(Email("test@email.com"), Password("bla"))))
       }
     assertEquals(DuplicateUser.message, response.bodyAsText())
     assertEquals(HttpStatusCode.BadRequest, response.status)
@@ -64,6 +64,26 @@ class ApplicationTest {
       bearerAuth(token)
     }
     assertEquals(HttpStatusCode.OK, response.status)
+  }
+
+
+  @Test
+  fun `create new task by user`() = testApplication {
+    val token = client.loginToken()
+    val client = createClient {
+      expectSuccess = false
+    }
+    val response = client.post("/task") {
+      bearerAuth(token)
+      contentType(ContentType.Application.Json)
+      setBody(Json.encodeToString(
+        CreateTaskRequest(
+          displayName = "test-task.oga",
+          lengthMs = 60*1000L
+        )))
+    }
+    assertEquals(DuplicateFile.message, response.bodyAsText())
+    assertEquals(HttpStatusCode.BadRequest, response.status)
   }
 
 }
