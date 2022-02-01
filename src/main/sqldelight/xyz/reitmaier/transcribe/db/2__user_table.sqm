@@ -6,19 +6,10 @@ import xyz.reitmaier.transcribe.data.UserId;
 -- user is reserved word in postgres -> users
 CREATE TABLE IF NOT EXISTS user
 (
---     id SERIAL8 AS UserId PRIMARY KEY,
     id INT AS UserId NOT NULL PRIMARY KEY AUTO_INCREMENT,
     email VARCHAR(319) AS Email NOT NULL,
     password VARCHAR(100) AS EncryptedPassword NOT NULL,
     created_at TIMESTAMP AS LocalDateTime NOT NULL DEFAULT CURRENT_TIMESTAMP,
---     fcm_token  TEXT AS FcmToken
     CONSTRAINT email_unique UNIQUE (email)
 );
 
--- CREATE TABLE IF NOT EXISTS Task_Entity
--- (
---     id SERIAL8 AS TaskId PRIMARY KEY,
---     user_id INT AS UserId  NOT NULL REFERENCES User_Entity(id),
---     path VARCHAR(255) NOT NULL UNIQUE,
---     created_at TIMESTAMP AS LocalDateTime NOT NULL DEFAULT CURRENT_TIMESTAMP
--- );
