@@ -38,6 +38,10 @@ value class EncryptedPassword(val value: String)
 @JvmInline
 value class Email(val value: String)
 
+enum class TaskProvenance(val provenance: String) {
+  LOCAL("LOCAL"),
+  REMOTE("REMOTE")
+}
 
 typealias DomainResult<T> = Result<T, DomainMessage>
 

@@ -1,8 +1,8 @@
 package xyz.reitmaier.transcribe.plugins
 
-//import org.postgresql.Driver
 import com.mysql.cj.jdbc.Driver
 import com.squareup.sqldelight.ColumnAdapter
+import com.squareup.sqldelight.EnumColumnAdapter
 import com.squareup.sqldelight.db.SqlDriver
 import com.squareup.sqldelight.sqlite.driver.asJdbcDriver
 import com.zaxxer.hikari.HikariConfig
@@ -12,6 +12,7 @@ import org.joda.time.LocalDateTime
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.format.DateTimeFormatter
 import xyz.reitmaier.transcribe.data.*
+import xyz.reitmaier.transcribe.db.Task
 import xyz.reitmaier.transcribe.db.TranscribeDb
 import xyz.reitmaier.transcribe.db.User
 import javax.sql.DataSource
@@ -53,6 +54,14 @@ fun Application.configureDB(): TranscribeDb {
       passwordAdapter = encryptedPasswordAdapter,
       created_atAdapter = timestampAdapter
     ),
+    taskAdapter = Task.Adapter(
+      idAdapter = taskIdAdapter,
+      user_idAdapter = userIdAdapter,
+      provenanceAdapter = EnumColumnAdapter(),
+      created_atAdapter = timestampAdapter,
+      updated_atAdapter = timestampAdapter
+
+    )
   )
   driver.migrate(db)
 
@@ -79,6 +88,11 @@ private val timestampFormat: DateTimeFormatter = DateTimeFormat.forPattern("yyyy
 private val userIdAdapter = object : ColumnAdapter<UserId, Int> {
   override fun decode(databaseValue: Int): UserId = UserId(databaseValue)
   override fun encode(value: UserId): Int = value.value
+}
+
+private val taskIdAdapter = object : ColumnAdapter<TaskId, Int> {
+  override fun decode(databaseValue: Int): TaskId = TaskId(databaseValue)
+  override fun encode(value: TaskId): Int = value.value
 }
 
 private val emailAdapter = object : ColumnAdapter<Email, String> {
