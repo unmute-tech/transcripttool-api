@@ -27,10 +27,14 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
       }
     }.mapError { DuplicateFile }
 
-  fun insertUser(email: Email, password: Password) : DomainResult<User> = runCatching {
+  fun insertUser(name: Name, mobile: MobileNumber, password: Password, operator: MobileOperator) : DomainResult<User> = runCatching {
     val encryptedPassword = passwordEncryptor.encrypt(password)
     user.transactionWithResult<UserId> {
-      user.addUser(email, encryptedPassword)
+      user.addUser(
+        password = encryptedPassword,
+        mobile_number = mobile,
+        mobile_operator = operator,
+        name = name)
       UserId(lastId())
     }
   }.mapError { DuplicateUser }
@@ -38,13 +42,13 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
       user.findUserById(it).executeAsOneOrNull().toResultOr { DatabaseError }
     }
 
-  fun findUserByEmail(email: Email) : DomainResult<User> = runCatching {
-    user.findUserByEmail(email).executeAsOne()
+  fun findUserByMobile(mobile: MobileNumber) : DomainResult<User> = runCatching {
+    user.findUserByMobile(mobile).executeAsOne()
   }.mapError { UserNotFound }
 
-  fun findUserByEmailAndPassword(user: UserAccount) : DomainResult<User> = runCatching {
-    this.user.findUserByEmailAndPassword(user.email, passwordEncryptor.encrypt(user.password)).executeAsOne()
-  }.mapError { EmailOrPasswordIncorrect }
+  fun findUserByMobileAndPassword(mobile: MobileNumber, password: Password) : DomainResult<User> = runCatching {
+    this.user.findUserByMobileAndPassword(mobile, passwordEncryptor.encrypt(password)).executeAsOne()
+  }.mapError { MobileOrPasswordIncorrect }
 
   private fun lastId() : Int = settings.lastInsertedIdAsLong().executeAsOne().toInt()
 }

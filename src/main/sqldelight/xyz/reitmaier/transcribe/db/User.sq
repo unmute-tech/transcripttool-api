@@ -1,12 +1,12 @@
 addUser:
-INSERT INTO user(email, password) VALUES (?,?);
+INSERT INTO user(password, mobile_number, mobile_operator, name) VALUES (?,?, ? ,?);
 
-findUserByEmail:
-SELECT * FROM user WHERE email = ? LIMIT 1;
+findUserByMobile:
+SELECT * FROM user WHERE mobile_number = ? LIMIT 1;
 
 findUserById:
 SELECT * FROM user WHERE id = ? LIMIT 1;
 
-findUserByEmailAndPassword:
-SELECT * FROM user WHERE email = ? AND password = ? LIMIT 1;
+findUserByMobileAndPassword:
+SELECT * FROM user WHERE mobile_number = ? AND password = ? LIMIT 1;
 

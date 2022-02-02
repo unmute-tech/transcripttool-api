@@ -14,12 +14,12 @@ import io.ktor.server.config.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import xyz.reitmaier.transcribe.data.*
-
+private const val claimMobile = "mobile"
 data class JWTConfig(
   val audience: String,
   val realm: String,
   val secret: String,
-  val issuer: String
+  val issuer: String,
 ) {
   companion object {
     fun from(config: ApplicationConfig) : JWTConfig {
@@ -48,8 +48,8 @@ fun Application.configureRouting(repo: TranscribeRepo,
           .build()
       )
       validate { credential ->
-        val email = Email(credential.payload.getClaim("email").asString())
-        if(repo.findUserByEmail(email).get() != null) {
+        val mobile = MobileNumber(credential.payload.getClaim(claimMobile).asString())
+        if(repo.findUserByMobile(mobile).get() != null) {
             JWTPrincipal(credential.payload)
           } else {
             null
@@ -62,11 +62,11 @@ fun Application.configureRouting(repo: TranscribeRepo,
       call.respondText("Hello World!")
     }
     post("/register") {
-      call.receiveOrNull<CreateUserRequest>().toResultOr { InvalidRequest }
-        .andThen { repo.insertUser(it.email, it.password) }
+      call.receiveOrNull<RegistrationRequest>().toResultOr { InvalidRequest }
+        .andThen { repo.insertUser(it.name, it.mobile, it.password, it.operator) }
         .fold(
           success = {
-            return@post call.respond(it.id)
+            return@post call.respond(HttpStatusCode.Created, it.id)
           },
           failure = {
             return@post call.respondDomainMessage(it)
@@ -74,14 +74,14 @@ fun Application.configureRouting(repo: TranscribeRepo,
         )
     }
     post("/login") {
-      val userAccount = call.receive<UserAccount>()
-      log.info { "Login request $userAccount"}
-      repo.findUserByEmailAndPassword(userAccount)
+      val loginRequest = call.receive<LoginRequest>()
+      log.info { "Login request $loginRequest"}
+      repo.findUserByMobileAndPassword(loginRequest.mobile, loginRequest.password)
         .map {
           JWT.create()
             .withAudience(jwtConfig.audience)
             .withIssuer(jwtConfig.issuer)
-            .withClaim("email", userAccount.email.value)
+            .withClaim(claimMobile, loginRequest.mobile.value)
             // TODO possibly expire tokens
 //            .withExpiresAt(Date(System.currentTimeMillis() + 600000))
             .sign(Algorithm.HMAC256(jwtConfig.secret))
@@ -94,15 +94,15 @@ fun Application.configureRouting(repo: TranscribeRepo,
 
     authenticate("auth-jwt") {
       get("/auth-test") {
-        val email = call.authenticatedUserEmail()
+        val email = call.getMobileOfAuthenticatedUser()
         call.respondText("Hello, $email!")
       }
 
 
       post("/task") {
-        val email = call.authenticatedUserEmail()
+        val mobile = call.getMobileOfAuthenticatedUser()
         binding <TaskDto, DomainMessage> {
-          val user = repo.findUserByEmail(email).bind()
+          val user = repo.findUserByMobile(mobile).bind()
           val taskRequest = call.receiveOrNull<CreateTaskRequest>().toResultOr { InvalidRequest }.bind()
           repo.insertTask(user.id, displayName = taskRequest.displayName, length = taskRequest.lengthMs, path = taskRequest.displayName, provenance = TaskProvenance.REMOTE).bind().toDto()
         }.fold(
@@ -114,11 +114,11 @@ fun Application.configureRouting(repo: TranscribeRepo,
   }
 }
 
-fun ApplicationCall.authenticatedUserEmail() : Email {
+fun ApplicationCall.getMobileOfAuthenticatedUser() : MobileNumber {
   val principal = principal<JWTPrincipal>()
-  val email = principal!!.payload.getClaim("email").asString()
+  val email = principal!!.payload.getClaim(claimMobile).asString()
   val expiresAt = principal.expiresAt?.time?.minus(System.currentTimeMillis())
-  return Email(email)
+  return MobileNumber(email)
 }
 
 suspend fun ApplicationCall.respondDomainMessage(domainMessage: DomainMessage) {
@@ -129,6 +129,6 @@ suspend fun ApplicationCall.respondDomainMessage(domainMessage: DomainMessage) {
     InvalidRequest -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     UserNotFound -> respond(HttpStatusCode.NotFound, domainMessage.message)
     PasswordIncorrect -> respond(HttpStatusCode.Forbidden, domainMessage.message)
-    EmailOrPasswordIncorrect -> respond(HttpStatusCode.Forbidden, domainMessage.message)
+    MobileOrPasswordIncorrect -> respond(HttpStatusCode.Forbidden, domainMessage.message)
   }
 }

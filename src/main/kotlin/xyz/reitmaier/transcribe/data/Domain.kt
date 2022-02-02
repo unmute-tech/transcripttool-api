@@ -10,16 +10,26 @@ REQUESTS
  */
 
 @Serializable
-data class CreateUserRequest(
-  val email: Email,
+data class RegistrationRequest(
+  val mobile: MobileNumber,
+  val operator: MobileOperator,
+  val name: Name,
   val password: Password,
-)
+) {
+  companion object {
+    val TEST = RegistrationRequest(MobileNumber.TEST, MobileOperator.TEST, Name.TEST, Password.TEST)
+  }
+}
 
 @Serializable
 data class CreateTaskRequest(
   val displayName: String,
   val lengthMs: Long,
-)
+) {
+  companion object {
+    val TEST = CreateTaskRequest("DISPLAY NAME", 60*1000L)
+  }
+}
 
 //public val id: TaskId,
 //public val user_id: UserId,
@@ -52,29 +62,66 @@ fun Task.toDto() : TaskDto =
   )
 
 @Serializable
-data class UserAccount(val email: Email, val password: Password)
+data class LoginRequest(val mobile: MobileNumber, val password: Password) {
+  companion object {
+    val TEST = LoginRequest(MobileNumber.TEST, Password.TEST)
+  }
+}
 /*
 INLINES
  */
 
 @Serializable(with = TaskIdSerializer::class)
 @JvmInline
-value class TaskId(val value: Int)
+value class TaskId(val value: Int) {
+  companion object {
+    val TEST = TaskId(1)
+  }
+}
 
 @Serializable(with = UserIdSerializer::class)
 @JvmInline
-value class UserId(val value: Int)
+value class UserId(val value: Int) {
+  companion object {
+    val TEST = UserId(1)
+  }
+}
 
 @Serializable(with = PasswordSerializer::class)
 @JvmInline
-value class Password(val value: String)
+value class Password(val value: String) {
+  companion object {
+    val TEST = Password("PASSWORD")
+  }
+}
+
+@Serializable(with = NameSerializer::class)
+@JvmInline
+value class Name(val value: String) {
+  companion object {
+    val TEST = Name("NAME")
+  }
+}
+
+
+@Serializable(with = MobileOperatorSerializer::class)
+@JvmInline
+value class MobileOperator(val value: String) {
+  companion object {
+    val TEST = MobileOperator("MOBILE OPERATOR")
+  }
+}
 
 @JvmInline
 value class EncryptedPassword(val value: String)
 
-@Serializable(with = EmailSerializer::class)
+@Serializable(with = MobileNumberSerializer::class)
 @JvmInline
-value class Email(val value: String)
+value class MobileNumber(val value: String) {
+  companion object {
+    val TEST = MobileNumber("000000000")
+  }
+}
 
 enum class TaskProvenance(val provenance: String) {
   LOCAL("LOCAL"),

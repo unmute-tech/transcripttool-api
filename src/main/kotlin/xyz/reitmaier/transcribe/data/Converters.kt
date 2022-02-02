@@ -8,7 +8,6 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import org.joda.time.LocalDateTime
 import xyz.reitmaier.transcribe.plugins.timestampAdapter
-import java.util.*
 
 // UserId
 
@@ -38,19 +37,43 @@ object TaskIdSerializer : KSerializer<TaskId> {
   }
 }
 
-object EmailSerializer : KSerializer<Email> {
+object MobileNumberSerializer : KSerializer<MobileNumber> {
   override val descriptor: SerialDescriptor
-    get() = PrimitiveSerialDescriptor("data.Email", PrimitiveKind.STRING)
+    get() = PrimitiveSerialDescriptor("data.MobileNumber", PrimitiveKind.STRING)
 
-  override fun serialize(encoder: Encoder, value: Email) {
+  override fun serialize(encoder: Encoder, value: MobileNumber) {
     encoder.encodeString(value.value)
   }
 
-  override fun deserialize(decoder: Decoder): Email {
-    return Email(decoder.decodeString())
+  override fun deserialize(decoder: Decoder): MobileNumber {
+    return MobileNumber(decoder.decodeString())
   }
 }
 
+object MobileOperatorSerializer : KSerializer<MobileOperator> {
+  override val descriptor: SerialDescriptor
+    get() = PrimitiveSerialDescriptor("data.MobileOperator", PrimitiveKind.STRING)
+
+  override fun serialize(encoder: Encoder, value: MobileOperator) {
+    encoder.encodeString(value.value)
+  }
+
+  override fun deserialize(decoder: Decoder): MobileOperator {
+    return MobileOperator(decoder.decodeString())
+  }
+}
+object NameSerializer : KSerializer<Name> {
+  override val descriptor: SerialDescriptor
+    get() = PrimitiveSerialDescriptor("data.Name", PrimitiveKind.STRING)
+
+  override fun serialize(encoder: Encoder, value: Name) {
+    encoder.encodeString(value.value)
+  }
+
+  override fun deserialize(decoder: Decoder): Name {
+    return Name(decoder.decodeString())
+  }
+}
 object PasswordSerializer : KSerializer<Password> {
   override val descriptor: SerialDescriptor
     get() = PrimitiveSerialDescriptor("data.Password", PrimitiveKind.STRING)

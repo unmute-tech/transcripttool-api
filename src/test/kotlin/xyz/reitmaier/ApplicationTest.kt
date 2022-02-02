@@ -26,7 +26,7 @@ class ApplicationTest {
     }
       val response = client.post("/register") {
         contentType(ContentType.Application.Json)
-        setBody(Json.encodeToString(CreateUserRequest(Email("test@email.com"), Password("bla"))))
+        setBody(Json.encodeToString(RegistrationRequest.TEST))
       }
     assertEquals(DuplicateUser.message, response.bodyAsText())
     assertEquals(HttpStatusCode.BadRequest, response.status)
@@ -40,7 +40,8 @@ class ApplicationTest {
     }
     val response = client.post("/login") {
       contentType(ContentType.Application.Json)
-      setBody(Json.encodeToString(UserAccount(Email("test@email.com"), Password("bla"))))
+      setBody(Json.encodeToString(LoginRequest.TEST))
+
     }
     assertEquals(HttpStatusCode.OK, response.status)
     val hashMap = Json.decodeFromString<HashMap<String,String>>(response.bodyAsText())
@@ -76,11 +77,7 @@ class ApplicationTest {
     val response = client.post("/task") {
       bearerAuth(token)
       contentType(ContentType.Application.Json)
-      setBody(Json.encodeToString(
-        CreateTaskRequest(
-          displayName = "test-task.oga",
-          lengthMs = 60*1000L
-        )))
+      setBody(Json.encodeToString(CreateTaskRequest.TEST))
     }
     assertEquals(DuplicateFile.message, response.bodyAsText())
     assertEquals(HttpStatusCode.BadRequest, response.status)
@@ -88,10 +85,11 @@ class ApplicationTest {
 
 }
 
+
 private suspend fun HttpClient.loginToken() : String {
   val response = post("/login") {
     contentType(ContentType.Application.Json)
-    setBody(Json.encodeToString(UserAccount(Email("test@email.com"), Password("bla"))))
+    setBody(Json.encodeToString(LoginRequest.TEST))
   }
   val hashMap = Json.decodeFromString<HashMap<String,String>>(response.bodyAsText())
   assertContains(hashMap,"token")
