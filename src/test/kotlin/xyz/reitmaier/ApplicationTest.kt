@@ -3,13 +3,17 @@ package xyz.reitmaier
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import io.ktor.client.utils.EmptyContent.contentType
 import io.ktor.http.*
 import kotlin.test.*
 import io.ktor.server.testing.*
+import kotlinx.coroutines.delay
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import xyz.reitmaier.transcribe.auth.AuthResponse
 import xyz.reitmaier.transcribe.data.*
+import kotlin.time.Duration.Companion.seconds
 
 class ApplicationTest {
   @Test
@@ -34,18 +38,19 @@ class ApplicationTest {
 
   @Test
   fun `login test`() = testApplication {
+    assertNotNull(client.login())
+  }
 
+  @Test
+  fun `invalid login test`() = testApplication {
     val client = createClient {
       expectSuccess = false
     }
     val response = client.post("/login") {
       contentType(ContentType.Application.Json)
-      setBody(Json.encodeToString(LoginRequest.TEST))
-
+      setBody(Json.encodeToString(LoginRequest.TEST.copy(password = Password("wrong password"))))
     }
-    assertEquals(HttpStatusCode.OK, response.status)
-    val hashMap = Json.decodeFromString<HashMap<String,String>>(response.bodyAsText())
-    assertContains(hashMap,"token")
+    assertEquals(HttpStatusCode.Unauthorized, response.status)
   }
 
   @Test
@@ -53,31 +58,46 @@ class ApplicationTest {
     val client = createClient {
       expectSuccess = false
     }
-    val response = client.get("/auth-test") {
+    val response = client.get("/tasks") {
     }
     assertEquals(HttpStatusCode.Unauthorized, response.status)
   }
 
   @Test
   fun `auth test`() = testApplication {
-    val token = client.loginToken()
-    val response = client.get("/auth-test") {
-      bearerAuth(token)
+    val token = client.login()
+    val response = client.get("/tasks") {
+      bearerAuth(token.accessToken.value)
     }
     assertEquals(HttpStatusCode.OK, response.status)
+  }
+
+  @Test
+  fun `refresh test`() = testApplication {
+    val auth = client.login()
+    delay(2.seconds)
+    val response = client.post("/refresh") {
+      contentType(ContentType.Application.Json)
+      setBody(Json.encodeToString(auth.refreshToken))
+    }
+    assertEquals(HttpStatusCode.OK, response.status)
+    val authResponse = Json.decodeFromString<AuthResponse>(response.bodyAsText())
+    assertNotNull(authResponse)
+    assertNotEquals(auth.accessToken, authResponse.accessToken)
+    assertEquals(auth.refreshToken, authResponse.refreshToken)
   }
 
 
   @Test
   fun `create new task by user`() = testApplication {
-    val token = client.loginToken()
+    val token = client.login()
     val client = createClient {
       expectSuccess = false
     }
     val response = client.post("/task") {
-      bearerAuth(token)
+      bearerAuth(token.accessToken.value)
       contentType(ContentType.Application.Json)
-      setBody(Json.encodeToString(CreateTaskRequest.TEST))
+      setBody(Json.encodeToString(TaskRequest.TEST))
     }
     assertEquals(DuplicateFile.message, response.bodyAsText())
     assertEquals(HttpStatusCode.BadRequest, response.status)
@@ -86,13 +106,14 @@ class ApplicationTest {
 }
 
 
-private suspend fun HttpClient.loginToken() : String {
+private suspend fun HttpClient.login() : AuthResponse {
   val response = post("/login") {
     contentType(ContentType.Application.Json)
     setBody(Json.encodeToString(LoginRequest.TEST))
   }
-  val hashMap = Json.decodeFromString<HashMap<String,String>>(response.bodyAsText())
-  assertContains(hashMap,"token")
+  assertEquals(HttpStatusCode.OK, response.status)
+  val authResponse = Json.decodeFromString<AuthResponse>(response.bodyAsText())
+  assertNotNull(authResponse)
 
-  return hashMap["token"]!!
+  return authResponse
 }

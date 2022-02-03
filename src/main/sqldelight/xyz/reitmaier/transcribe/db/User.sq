@@ -4,9 +4,15 @@ INSERT INTO user(password, mobile_number, mobile_operator, name) VALUES (?,?, ? 
 findUserByMobile:
 SELECT * FROM user WHERE mobile_number = ? LIMIT 1;
 
+findUserByRefreshToken:
+SELECT * FROM user WHERE refresh_token = ? LIMIT 1;
+
 findUserById:
 SELECT * FROM user WHERE id = ? LIMIT 1;
 
 findUserByMobileAndPassword:
 SELECT * FROM user WHERE mobile_number = ? AND password = ? LIMIT 1;
+
+updateRefreshToken:
+UPDATE user SET refresh_token = :refresh_token WHERE id = ?;
 

@@ -62,6 +62,31 @@ object MobileOperatorSerializer : KSerializer<MobileOperator> {
     return MobileOperator(decoder.decodeString())
   }
 }
+
+object AccessTokenSerializer : KSerializer<AccessToken> {
+  override val descriptor: SerialDescriptor
+    get() = PrimitiveSerialDescriptor("data.AccessToken", PrimitiveKind.STRING)
+
+  override fun serialize(encoder: Encoder, value: AccessToken) {
+    encoder.encodeString(value.value)
+  }
+
+  override fun deserialize(decoder: Decoder): AccessToken {
+    return AccessToken(decoder.decodeString())
+  }
+}
+object RefreshTokenSerializer : KSerializer<RefreshToken> {
+  override val descriptor: SerialDescriptor
+    get() = PrimitiveSerialDescriptor("data.RefreshToken", PrimitiveKind.STRING)
+
+  override fun serialize(encoder: Encoder, value: RefreshToken) {
+    encoder.encodeString(value.value)
+  }
+
+  override fun deserialize(decoder: Decoder): RefreshToken {
+    return RefreshToken(decoder.decodeString())
+  }
+}
 object NameSerializer : KSerializer<Name> {
   override val descriptor: SerialDescriptor
     get() = PrimitiveSerialDescriptor("data.Name", PrimitiveKind.STRING)

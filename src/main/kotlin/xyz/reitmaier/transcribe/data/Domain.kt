@@ -4,6 +4,7 @@ import com.github.michaelbull.result.*
 import kotlinx.serialization.Serializable
 import org.joda.time.LocalDateTime
 import xyz.reitmaier.transcribe.db.Task
+import java.util.UUID
 
 /*
 REQUESTS
@@ -22,12 +23,12 @@ data class RegistrationRequest(
 }
 
 @Serializable
-data class CreateTaskRequest(
+data class TaskRequest(
   val displayName: String,
   val lengthMs: Long,
 ) {
   companion object {
-    val TEST = CreateTaskRequest("DISPLAY NAME", 60*1000L)
+    val TEST = TaskRequest("DISPLAY NAME", 60*1000L)
   }
 }
 
@@ -100,6 +101,23 @@ value class Password(val value: String) {
 value class Name(val value: String) {
   companion object {
     val TEST = Name("NAME")
+  }
+}
+
+@Serializable(with = RefreshTokenSerializer::class)
+@JvmInline
+value class RefreshToken(val value: String) {
+  companion object {
+    fun create() : RefreshToken = RefreshToken(UUID.randomUUID().toString())
+    val TEST = RefreshToken("REFRESH TOKEN")
+  }
+}
+
+@Serializable(with = AccessTokenSerializer::class)
+@JvmInline
+value class AccessToken(val value: String) {
+  companion object {
+    val TEST = AccessToken("ACCESS TOKEN")
   }
 }
 

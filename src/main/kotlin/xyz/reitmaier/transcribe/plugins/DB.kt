@@ -54,7 +54,8 @@ fun Application.configureDB(): TranscribeDb {
       mobile_operatorAdapter = mobileOperatorAdapter,
       nameAdapter = nameAdapter,
       passwordAdapter = encryptedPasswordAdapter,
-      created_atAdapter = timestampAdapter
+      created_atAdapter = timestampAdapter,
+      refresh_tokenAdapter = refreshTokenAdapter,
     ),
     taskAdapter = Task.Adapter(
       idAdapter = taskIdAdapter,
@@ -110,6 +111,11 @@ private val mobileOperatorAdapter = object : ColumnAdapter<MobileOperator, Strin
 private val nameAdapter = object : ColumnAdapter<Name, String> {
   override fun decode(databaseValue: String) = Name(databaseValue)
   override fun encode(value: Name) = value.value
+}
+
+private val refreshTokenAdapter = object : ColumnAdapter<RefreshToken, String> {
+  override fun decode(databaseValue: String) = RefreshToken(databaseValue)
+  override fun encode(value: RefreshToken) = value.value
 }
 
 private val encryptedPasswordAdapter = object : ColumnAdapter<EncryptedPassword, String> {

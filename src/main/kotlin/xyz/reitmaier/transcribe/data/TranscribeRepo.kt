@@ -13,6 +13,12 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
   private val task = db.taskQueries
   private val settings = db.settingsQueries
 
+  fun updateRefreshToken(id: UserId, refreshToken: RefreshToken = RefreshToken.create()) : DomainResult<RefreshToken> =
+    runCatching {
+      user.updateRefreshToken(refreshToken, id)
+      refreshToken
+    }.mapError { DatabaseError }
+
   fun insertTask(userId: UserId, displayName: String, length: Long, path: String, provenance: TaskProvenance, ) : DomainResult<Task> =
     runCatching { db.transactionWithResult<Task> {
         task.addTask(
@@ -44,6 +50,11 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
 
   fun findUserByMobile(mobile: MobileNumber) : DomainResult<User> = runCatching {
     user.findUserByMobile(mobile).executeAsOne()
+  }.mapError { UserNotFound }
+
+
+  fun findUserByRefreshToken(refreshToken: RefreshToken) : DomainResult<User> = runCatching {
+    user.findUserByRefreshToken(refreshToken).executeAsOne()
   }.mapError { UserNotFound }
 
   fun findUserByMobileAndPassword(mobile: MobileNumber, password: Password) : DomainResult<User> = runCatching {

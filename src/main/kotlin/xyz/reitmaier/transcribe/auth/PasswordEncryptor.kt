@@ -8,7 +8,7 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
 class PasswordEncryptor(jwtConfig: JWTConfig) {
-    private val hmacKey: SecretKeySpec = SecretKeySpec(jwtConfig.secret.toByteArray(), ALGORITHM)
+    private val hmacKey: SecretKeySpec = SecretKeySpec(jwtConfig.tokenSecret.toByteArray(), ALGORITHM)
 
     /**
      * Function which encrypts password and return
