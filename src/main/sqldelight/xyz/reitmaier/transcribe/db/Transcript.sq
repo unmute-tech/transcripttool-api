@@ -1,0 +1,9 @@
+addTranscript:
+INSERT INTO transcript(task_id, transcript, region_start, region_end) VALUES (?,?,?,?);
+
+selectLatestTranscript:
+SELECT * FROM transcript WHERE task_id = ? ORDER BY updated_at DESC LIMIT 1;
+
+selectTranscript:
+SELECT * FROM transcript WHERE id = ? LIMIT 1;
+

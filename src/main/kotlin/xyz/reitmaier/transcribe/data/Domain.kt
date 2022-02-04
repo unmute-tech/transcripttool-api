@@ -4,6 +4,8 @@ import com.github.michaelbull.result.*
 import kotlinx.serialization.Serializable
 import org.joda.time.LocalDateTime
 import xyz.reitmaier.transcribe.db.Task
+import java.time.Clock
+import java.time.Instant
 import java.util.UUID
 
 /*
@@ -21,6 +23,24 @@ data class RegistrationRequest(
     val TEST = RegistrationRequest(MobileNumber.TEST, MobileOperator.TEST, Name.TEST, Password.TEST)
   }
 }
+
+@Serializable
+data class NewTranscript(
+  val transcript: String,
+  val regionStart: Int,
+  val regionEnd: Int,
+  @Serializable(with = LocalDateTimeSerializer::class)
+  val updatedAt: LocalDateTime,
+)
+{
+  companion object {
+    val TEST = NewTranscript("Test Transcript", 0, 5, LocalDateTime.now())
+    val TEST1 = NewTranscript("Test Transcript continued", 5, 10, LocalDateTime.now())
+    val TEST2 = NewTranscript("Test Transcript continued further", 10, 15, LocalDateTime.now())
+    val TESTS = listOf(TEST, TEST1, TEST2)
+  }
+}
+
 
 @Serializable
 data class TaskRequest(
@@ -85,6 +105,14 @@ value class TaskId(val value: Int) {
 value class UserId(val value: Int) {
   companion object {
     val TEST = UserId(1)
+  }
+}
+
+@Serializable(with = TranscriptIdSerializer::class)
+@JvmInline
+value class TranscriptId(val value: Int) {
+  companion object {
+    val TEST = TranscriptId(1)
   }
 }
 

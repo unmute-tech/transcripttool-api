@@ -14,6 +14,7 @@ import org.joda.time.format.DateTimeFormatter
 import xyz.reitmaier.transcribe.data.*
 import xyz.reitmaier.transcribe.db.Task
 import xyz.reitmaier.transcribe.db.TranscribeDb
+import xyz.reitmaier.transcribe.db.Transcript
 import xyz.reitmaier.transcribe.db.User
 import javax.sql.DataSource
 
@@ -63,7 +64,12 @@ fun Application.configureDB(): TranscribeDb {
       provenanceAdapter = EnumColumnAdapter(),
       created_atAdapter = timestampAdapter,
       updated_atAdapter = timestampAdapter
-
+    ),
+    transcriptAdapter = Transcript.Adapter(
+      idAdapter = transcriptIdAdapter,
+      task_idAdapter = taskIdAdapter,
+      created_atAdapter = timestampAdapter,
+      updated_atAdapter = timestampAdapter,
     )
   )
   driver.migrate(db)
@@ -96,6 +102,11 @@ private val userIdAdapter = object : ColumnAdapter<UserId, Int> {
 private val taskIdAdapter = object : ColumnAdapter<TaskId, Int> {
   override fun decode(databaseValue: Int): TaskId = TaskId(databaseValue)
   override fun encode(value: TaskId): Int = value.value
+}
+
+private val transcriptIdAdapter = object : ColumnAdapter<TranscriptId, Int> {
+  override fun decode(databaseValue: Int): TranscriptId = TranscriptId(databaseValue)
+  override fun encode(value: TranscriptId): Int = value.value
 }
 
 private val mobileNumberAdapter = object : ColumnAdapter<MobileNumber, String> {

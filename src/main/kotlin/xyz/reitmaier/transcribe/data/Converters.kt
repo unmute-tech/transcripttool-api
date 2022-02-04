@@ -6,8 +6,11 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import org.joda.time.DateTimeZone
+import org.joda.time.Instant
 import org.joda.time.LocalDateTime
 import xyz.reitmaier.transcribe.plugins.timestampAdapter
+import java.text.SimpleDateFormat
 
 // UserId
 
@@ -21,6 +24,19 @@ object UserIdSerializer : KSerializer<UserId> {
 
   override fun deserialize(decoder: Decoder): UserId {
     return UserId(decoder.decodeInt())
+  }
+}
+
+object TranscriptIdSerializer : KSerializer<TranscriptId> {
+  override val descriptor: SerialDescriptor
+    get() = PrimitiveSerialDescriptor("data.TranscriptId", PrimitiveKind.STRING)
+
+  override fun serialize(encoder: Encoder, value: TranscriptId) {
+    encoder.encodeString(value.value.toString())
+  }
+
+  override fun deserialize(decoder: Decoder): TranscriptId {
+    return TranscriptId(decoder.decodeInt())
   }
 }
 
@@ -117,8 +133,8 @@ object LocalDateTimeSerializer : KSerializer<LocalDateTime> {
     get() = PrimitiveSerialDescriptor("LocalDateTime", PrimitiveKind.STRING)
 
   override fun serialize(encoder: Encoder, value: LocalDateTime) =
-    encoder.encodeString(timestampAdapter.encode(value))
+    encoder.encodeString(value.toDateTime().toInstant().toString())
 
   override fun deserialize(decoder: Decoder): LocalDateTime =
-    timestampAdapter.decode(decoder.decodeString())
+    Instant.parse(decoder.decodeString()).toDateTime(DateTimeZone.getDefault()).toLocalDateTime()
 }

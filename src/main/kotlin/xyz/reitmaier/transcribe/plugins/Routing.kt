@@ -142,9 +142,27 @@ fun Application.configureRouting(repo: TranscribeRepo,
         fileItem.dispose()
         repo.insertTask(user.id,displayName,length,file.path,TaskProvenance.LOCAL).map { task ->  task.id}
           .fold(
-            success = { call.respond(HttpStatusCode.Created,it)},
+            success = { call.respond(HttpStatusCode.Created,it.value)},
             failure = { call.respondDomainMessage(it)}
           )
+      }
+
+      post("/task/{$TASK_ID_PARAMETER}/transcript") {
+        val mobile = call.getMobileOfAuthenticatedUser()
+        binding<Int, DomainMessage> {
+          val user = repo.findUserByMobile(mobile).bind()
+          val task = repo.getUserTask(
+            taskId = call.parameters.readTaskId().bind(),
+            userId = user.id
+          ).bind()
+          val transcripts = call.receiveOrNull<List<NewTranscript>>()
+            .toResultOr { InvalidRequest }.bind()
+          repo.insertTranscripts(task.id, transcripts).bind()
+        }.fold(
+          success = { n -> call.respond(HttpStatusCode.Created, n)},
+          failure = { call.respondDomainMessage(it) }
+        )
+
       }
 
       post("/task-old") {
@@ -161,7 +179,19 @@ fun Application.configureRouting(repo: TranscribeRepo,
     }
   }
 }
+const val TASK_ID_PARAMETER = "taskId"
+private fun Parameters.readTaskId(): Result<TaskId, DomainMessage> {
+  return get(TASK_ID_PARAMETER)
+    .toResultOr { TaskIdRequired }
+    .andThen { it.toIntResult() }
+    .mapError { TaskIdInvalid }
+    .map { TaskId(it) }
+}
 
+fun String.toIntResult() : Result<Int, Throwable> =
+  runCatching {
+    this.toInt()
+  }
 fun ApplicationCall.getMobileOfAuthenticatedUser() : MobileNumber {
   val principal = principal<JWTPrincipal>()
   val email = principal!!.payload.getClaim(CLAIM_MOBILE).asString()
@@ -181,5 +211,8 @@ suspend fun ApplicationCall.respondDomainMessage(domainMessage: DomainMessage) {
     FileMissing -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     FileNameMissing -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     ContentLengthMissing -> respond(HttpStatusCode.BadRequest, domainMessage.message)
+    TaskIdInvalid -> respond(HttpStatusCode.BadRequest, domainMessage.message)
+    TaskIdRequired -> respond(HttpStatusCode.BadRequest, domainMessage.message)
+    TaskNotFound -> respond(HttpStatusCode.BadRequest, domainMessage.message)
   }
 }

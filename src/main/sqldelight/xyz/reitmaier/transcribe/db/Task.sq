@@ -7,3 +7,6 @@ SELECT * FROM task WHERE user_id = ? ORDER BY updated_at DESC;
 selectTaskById:
 SELECT * FROM task WHERE id = ? LIMIT 1;
 
+selectTaskByIdAndUserId:
+SELECT * FROM task WHERE user_id = ? AND id = ? LIMIT 1;
+

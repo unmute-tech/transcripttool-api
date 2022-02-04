@@ -2,20 +2,26 @@ package xyz.reitmaier
 
 import io.ktor.client.*
 import io.ktor.client.request.*
+import io.ktor.client.request.forms.*
 import io.ktor.client.statement.*
 import io.ktor.client.utils.EmptyContent.contentType
 import io.ktor.http.*
 import kotlin.test.*
 import io.ktor.server.testing.*
+import io.netty.handler.codec.http.HttpHeaders.addHeader
 import kotlinx.coroutines.delay
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.junit.Assert
 import xyz.reitmaier.transcribe.auth.AuthResponse
 import xyz.reitmaier.transcribe.data.*
+import java.io.File
 import kotlin.time.Duration.Companion.seconds
 
 class ApplicationTest {
+  private val file = File("PTT-20210804-WA0002.opus")
+  private val fileContent = file.readBytes()
   @Test
   fun testRoot() = testApplication {
     val response = client.get("/")
@@ -89,6 +95,34 @@ class ApplicationTest {
 
 
   @Test
+  fun `test create new task`() = testApplication {
+    val boundary = "WebAppBoundary"
+    val token = client.login()
+    delay(1.seconds)
+
+    val client = createClient {
+      expectSuccess = false
+    }
+    val response = client.post("/task") {
+      bearerAuth(token.accessToken.value)
+//      header(HttpHeaders.ContentType, ContentType.MultiPart.FormData.withParameter("boundary", boundary).toString())
+//      contentType(ContentType.MultiPart.FormData)
+      setBody(
+        MultiPartFormDataContent(
+          formData {
+            append("length", 5)
+            append("file", fileContent, Headers.build {
+              append(HttpHeaders.ContentDisposition, "filename=${file.name}")
+            })
+          },
+          boundary,
+          ContentType.MultiPart.FormData.withParameter("boundary", boundary)
+        )
+      )
+    }
+    assertEquals(HttpStatusCode.Created, response.status)
+  }
+  @Test
   fun `create new task by user`() = testApplication {
     val token = client.login()
     val client = createClient {
@@ -99,8 +133,8 @@ class ApplicationTest {
       contentType(ContentType.Application.Json)
       setBody(Json.encodeToString(TaskRequest.TEST))
     }
-    assertEquals(DuplicateFile.message, response.bodyAsText())
     assertEquals(HttpStatusCode.BadRequest, response.status)
+    assertEquals(DuplicateFile.message, response.bodyAsText())
   }
 
 }

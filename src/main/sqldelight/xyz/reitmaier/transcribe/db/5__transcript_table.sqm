@@ -1,0 +1,16 @@
+import org.joda.time.LocalDateTime;
+import xyz.reitmaier.transcribe.data.TaskId;
+import xyz.reitmaier.transcribe.data.TranscriptId;
+
+-- user is reserved word in postgres -> users
+CREATE TABLE IF NOT EXISTS transcript
+(
+    id INT AS TranscriptId NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    task_id INT AS TaskId NOT NULL REFERENCES task(id),
+    transcript TEXT NOT NULL,
+    region_start INT NOT NULL,
+    region_end INT NOT NULL,
+    updated_at TIMESTAMP AS LocalDateTime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP AS LocalDateTime NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
