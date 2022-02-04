@@ -11,6 +11,9 @@ object UserNotFound : DomainMessage("User not found")
 object MobileOrPasswordIncorrect : DomainMessage("Mobile number or password is incorrect")
 object PasswordIncorrect : DomainMessage("The password is incorrect")
 object InvalidRequest : DomainMessage("The request is invalid")
+object FileMissing : DomainMessage("The request is missing a file item")
+object FileNameMissing : DomainMessage("The request is missing a file name")
+object ContentLengthMissing : DomainMessage("The request is missing a content length parameter: length")
 
 /* internal errors */
 
