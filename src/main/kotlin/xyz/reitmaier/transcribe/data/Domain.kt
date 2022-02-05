@@ -70,10 +70,10 @@ data class TaskDto(
   val provenance: TaskProvenance,
   val transcript: String,
 
-  @Serializable(with = LocalDateTimeSerializer::class)
-  val created_at: LocalDateTime,
-  @Serializable(with = InstantIso8601Serializer::class)
-  val updated_at: LocalDateTime,
+  @Serializable(with = InstantEpochSerializer::class)
+  val created_at: Instant,
+  @Serializable(with = InstantEpochSerializer::class)
+  val updated_at: Instant,
 )
 fun Hydrated_task.toDto() =
   TaskDto(

@@ -1,5 +1,4 @@
 import kotlinx.datetime.Instant;
-import kotlinx.datetime.LocalDateTime;
 import xyz.reitmaier.transcribe.data.TaskId;
 import xyz.reitmaier.transcribe.data.TaskProvenance;
 import xyz.reitmaier.transcribe.data.UserId;
@@ -13,8 +12,8 @@ CREATE TABLE IF NOT EXISTS task
     length BIGINT NOT NULL,
     provenance VARCHAR(255) AS TaskProvenance NOT NULL,
     display_name VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP AS LocalDateTime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP AS LocalDateTime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at BIGINT AS Instant NOT NULL,
+    updated_at BIGINT AS Instant NOT NULL,
 --     fcm_token  TEXT AS FcmToken
     CONSTRAINT path_unique UNIQUE (path)
 );

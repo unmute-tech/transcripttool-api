@@ -126,14 +126,13 @@ object PasswordSerializer : KSerializer<Password> {
   }
 }
 
-object LocalDateTimeSerializer : KSerializer<LocalDateTime> {
-  val timezone = TimeZone.currentSystemDefault()
+object InstantEpochSerializer : KSerializer<Instant> {
   override val descriptor: SerialDescriptor
-    get() = PrimitiveSerialDescriptor("LocalDateTime", PrimitiveKind.STRING)
+    get() = PrimitiveSerialDescriptor("Instant", PrimitiveKind.LONG)
 
-  override fun serialize(encoder: Encoder, value: LocalDateTime) =
-    encoder.encodeString(value.toJavaLocalDateTime().format(timestampFormat))
+  override fun serialize(encoder: Encoder, value: Instant) =
+    encoder.encodeLong(value.toEpochMilliseconds())
 
-  override fun deserialize(decoder: Decoder): LocalDateTime =
-    java.time.LocalDateTime.parse(decoder.decodeString(), timestampFormat).toKotlinLocalDateTime()
+  override fun deserialize(decoder: Decoder): Instant =
+    Instant.fromEpochMilliseconds(decoder.decodeLong())
 }

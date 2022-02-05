@@ -1,4 +1,4 @@
-import kotlinx.datetime.LocalDateTime;
+import kotlinx.datetime.Instant;
 import xyz.reitmaier.transcribe.data.TaskId;
 import xyz.reitmaier.transcribe.data.TranscriptId;
 
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS transcript
     transcript TEXT NOT NULL,
     region_start INT NOT NULL,
     region_end INT NOT NULL,
-    updated_at TIMESTAMP AS LocalDateTime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMP AS LocalDateTime NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at BIGINT AS Instant NOT NULL,
+    created_at BIGINT AS Instant NOT NULL
 );
 

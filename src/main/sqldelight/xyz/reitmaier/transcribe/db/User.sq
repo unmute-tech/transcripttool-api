@@ -1,5 +1,5 @@
 addUser:
-INSERT INTO user(password, mobile_number, mobile_operator, name) VALUES (?,?, ? ,?);
+INSERT INTO user(password, mobile_number, mobile_operator, name, created_at) VALUES (?,?, ? ,?, ?);
 
 findUserByMobile:
 SELECT * FROM user WHERE mobile_number = ? LIMIT 1;

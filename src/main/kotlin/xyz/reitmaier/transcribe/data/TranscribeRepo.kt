@@ -2,6 +2,7 @@ package xyz.reitmaier.transcribe.data
 
 import com.github.michaelbull.logging.InlineLogger
 import com.github.michaelbull.result.*
+import kotlinx.datetime.Clock
 import xyz.reitmaier.transcribe.auth.PasswordEncryptor
 import xyz.reitmaier.transcribe.db.*
 
@@ -22,11 +23,14 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
     runCatching {
       db.transactionWithResult<Int> {
         newTranscripts.forEach { transcript ->
+          val timestamp = Clock.System.now()
           transcripts.addTranscript(
             task_id = taskId,
             region_start = transcript.regionStart,
             region_end = transcript.regionEnd,
             transcript = transcript.transcript,
+            created_at = timestamp,
+            updated_at = timestamp,
           )
         }
         newTranscripts.size
@@ -35,11 +39,14 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
 
   private fun insertTranscript(taskId: TaskId, transcript: String, regionStart: Int, regionEnd: Int) : DomainResult<Transcript>  =
     runCatching {
+      val timestamp = Clock.System.now()
       transcripts.addTranscript(
         task_id = taskId,
         region_start = regionStart,
         region_end = regionEnd,
         transcript = transcript,
+        created_at = timestamp,
+        updated_at = timestamp
       )
       val transcriptId = TranscriptId(lastId())
       transcripts.selectTranscript(transcriptId).executeAsOne()
@@ -47,12 +54,15 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
 
   fun insertTask(userId: UserId, displayName: String, length: Long, path: String, provenance: TaskProvenance, ) : DomainResult<Task> =
     runCatching { db.transactionWithResult<Task> {
+      val timestamp = Clock.System.now()
         tasks.addTask(
           user_id = userId,
           display_name = displayName,
           length = length,
           path = path,
           provenance = provenance,
+          created_at = timestamp,
+          updated_at = timestamp,
         )
         val taskId = TaskId(lastId())
         tasks.selectTaskById(taskId).executeAsOne()
@@ -62,11 +72,14 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
   fun insertUser(name: Name, mobile: MobileNumber, password: Password, operator: MobileOperator) : DomainResult<User> = runCatching {
     val encryptedPassword = passwordEncryptor.encrypt(password)
     users.transactionWithResult<UserId> {
+      val timestamp = Clock.System.now()
       users.addUser(
         password = encryptedPassword,
         mobile_number = mobile,
         mobile_operator = operator,
-        name = name)
+        name = name,
+        created_at = timestamp,
+      )
       UserId(lastId())
     }
   }.mapError { DuplicateUser }

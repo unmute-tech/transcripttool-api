@@ -133,12 +133,9 @@ private val encryptedPasswordAdapter = object : ColumnAdapter<EncryptedPassword,
   override fun encode(value: EncryptedPassword) = value.value
 }
 
-val timestampAdapter = object : ColumnAdapter<LocalDateTime, String> {
-  override fun decode(databaseValue: String) = java.time.LocalDateTime.parse(databaseValue, timestampFormat).toKotlinLocalDateTime()
-  override fun encode(value: LocalDateTime) = value.toJavaLocalDateTime().format(timestampFormat)
+val timestampAdapter = object : ColumnAdapter<Instant, Long> {
+  override fun decode(databaseValue: Long) =
+    Instant.fromEpochMilliseconds(databaseValue)
+  override fun encode(value: Instant) = value.toEpochMilliseconds()
 }
 
-private val instantAdapter = object : ColumnAdapter<Instant, String> {
-  override fun decode(databaseValue: String) = Instant.parse(databaseValue)
-  override fun encode(value: Instant) = value.toString()
-}
