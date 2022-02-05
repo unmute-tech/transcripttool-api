@@ -35,6 +35,16 @@ repositories {
   maven { url = uri("https://maven.pkg.jetbrains.space/public/p/ktor/eap") }
 }
 
+// make all when statements exhaustive by default and opt-in to errors instead of warnings
+kotlin {
+  sourceSets.all {
+    languageSettings {
+      languageVersion = "1.6"
+      progressiveMode = true
+    }
+  }
+}
+
 dependencies {
   // ktor
   implementation("io.ktor:ktor-server-core:$ktor_version")
@@ -62,7 +72,8 @@ dependencies {
   implementation("com.squareup.sqldelight:coroutines-extensions:$sqldelight_version")
 
   // utilities
-  implementation("joda-time:joda-time:2.10.13")
+//  implementation("joda-time:joda-time:2.10.13")
+  implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.2")
 
   // logging
   implementation("io.ktor:ktor-server-call-logging:$ktor_version")

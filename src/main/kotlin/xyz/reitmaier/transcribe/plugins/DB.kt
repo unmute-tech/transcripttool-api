@@ -8,14 +8,13 @@ import com.squareup.sqldelight.sqlite.driver.asJdbcDriver
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.*
-import org.joda.time.LocalDateTime
-import org.joda.time.format.DateTimeFormat
-import org.joda.time.format.DateTimeFormatter
+import kotlinx.datetime.*
 import xyz.reitmaier.transcribe.data.*
 import xyz.reitmaier.transcribe.db.Task
 import xyz.reitmaier.transcribe.db.TranscribeDb
 import xyz.reitmaier.transcribe.db.Transcript
 import xyz.reitmaier.transcribe.db.User
+import java.time.format.DateTimeFormatter
 import javax.sql.DataSource
 
 fun Application.configureDB(): TranscribeDb {
@@ -63,7 +62,7 @@ fun Application.configureDB(): TranscribeDb {
       user_idAdapter = userIdAdapter,
       provenanceAdapter = EnumColumnAdapter(),
       created_atAdapter = timestampAdapter,
-      updated_atAdapter = timestampAdapter
+      updated_atAdapter = timestampAdapter,
     ),
     transcriptAdapter = Transcript.Adapter(
       idAdapter = transcriptIdAdapter,
@@ -92,7 +91,7 @@ private fun SqlDriver.migrate(database: TranscribeDb) {
     database.settingsQueries.setVersion(version + 1)
   }
 }
-private val timestampFormat: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")
+val timestampFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
 private val userIdAdapter = object : ColumnAdapter<UserId, Int> {
   override fun decode(databaseValue: Int): UserId = UserId(databaseValue)
@@ -135,6 +134,11 @@ private val encryptedPasswordAdapter = object : ColumnAdapter<EncryptedPassword,
 }
 
 val timestampAdapter = object : ColumnAdapter<LocalDateTime, String> {
-  override fun decode(databaseValue: String) = LocalDateTime.parse(databaseValue, timestampFormat)
-  override fun encode(value: LocalDateTime) = value.toString(timestampFormat)
+  override fun decode(databaseValue: String) = java.time.LocalDateTime.parse(databaseValue, timestampFormat).toKotlinLocalDateTime()
+  override fun encode(value: LocalDateTime) = value.toJavaLocalDateTime().format(timestampFormat)
+}
+
+private val instantAdapter = object : ColumnAdapter<Instant, String> {
+  override fun decode(databaseValue: String) = Instant.parse(databaseValue)
+  override fun encode(value: Instant) = value.toString()
 }

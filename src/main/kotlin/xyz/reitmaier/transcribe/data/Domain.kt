@@ -1,12 +1,13 @@
 package xyz.reitmaier.transcribe.data
 
 import com.github.michaelbull.result.*
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
-import org.joda.time.LocalDateTime
 import xyz.reitmaier.transcribe.db.Hydrated_task
 import xyz.reitmaier.transcribe.db.Task
-import java.time.Clock
-import java.time.Instant
+import kotlinx.datetime.serializers.InstantIso8601Serializer
 import java.util.UUID
 
 /*
@@ -30,14 +31,14 @@ data class NewTranscript(
   val transcript: String,
   val regionStart: Int,
   val regionEnd: Int,
-  @Serializable(with = LocalDateTimeSerializer::class)
-  val updatedAt: LocalDateTime,
+  @Serializable(with = InstantIso8601Serializer::class)
+  val updatedAt: Instant,
 )
 {
   companion object {
-    val TEST = NewTranscript("Test Transcript", 0, 5, LocalDateTime.now())
-    val TEST1 = NewTranscript("Test Transcript continued", 5, 10, LocalDateTime.now())
-    val TEST2 = NewTranscript("Test Transcript continued further", 10, 15, LocalDateTime.now())
+    val TEST = NewTranscript("Test Transcript", 0, 5, Clock.System.now())
+    val TEST1 = NewTranscript("Test Transcript continued", 5, 10, Clock.System.now())
+    val TEST2 = NewTranscript("Test Transcript continued further", 10, 15, Clock.System.now())
     val TESTS = listOf(TEST, TEST1, TEST2)
   }
 }
@@ -71,7 +72,7 @@ data class TaskDto(
 
   @Serializable(with = LocalDateTimeSerializer::class)
   val created_at: LocalDateTime,
-  @Serializable(with = LocalDateTimeSerializer::class)
+  @Serializable(with = InstantIso8601Serializer::class)
   val updated_at: LocalDateTime,
 )
 fun Hydrated_task.toDto() =

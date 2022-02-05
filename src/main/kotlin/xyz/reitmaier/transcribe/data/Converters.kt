@@ -1,15 +1,13 @@
 package xyz.reitmaier.transcribe.data
 
+import kotlinx.datetime.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import org.joda.time.DateTimeZone
-import org.joda.time.Instant
-import org.joda.time.LocalDateTime
-import xyz.reitmaier.transcribe.plugins.timestampAdapter
+import xyz.reitmaier.transcribe.plugins.timestampFormat
 import java.text.SimpleDateFormat
 
 // UserId
@@ -129,12 +127,13 @@ object PasswordSerializer : KSerializer<Password> {
 }
 
 object LocalDateTimeSerializer : KSerializer<LocalDateTime> {
+  val timezone = TimeZone.currentSystemDefault()
   override val descriptor: SerialDescriptor
     get() = PrimitiveSerialDescriptor("LocalDateTime", PrimitiveKind.STRING)
 
   override fun serialize(encoder: Encoder, value: LocalDateTime) =
-    encoder.encodeString(value.toDateTime().toInstant().toString())
+    encoder.encodeString(value.toJavaLocalDateTime().format(timestampFormat))
 
   override fun deserialize(decoder: Decoder): LocalDateTime =
-    Instant.parse(decoder.decodeString()).toDateTime(DateTimeZone.getDefault()).toLocalDateTime()
+    java.time.LocalDateTime.parse(decoder.decodeString(), timestampFormat).toKotlinLocalDateTime()
 }

@@ -6,6 +6,7 @@ import com.github.michaelbull.logging.InlineLogger
 import com.github.michaelbull.result.*
 import com.github.michaelbull.result.coroutines.binding.binding
 import io.ktor.http.*
+import io.ktor.http.HttpStatusCode.Companion.NotFound
 import io.ktor.http.HttpStatusCode.Companion.PartialContent
 import io.ktor.http.content.*
 import io.ktor.server.routing.*
@@ -229,5 +230,6 @@ suspend fun ApplicationCall.respondDomainMessage(domainMessage: DomainMessage) {
     TaskIdInvalid -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     TaskIdRequired -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     TaskNotFound -> respond(HttpStatusCode.BadRequest, domainMessage.message)
+    TranscriptNotFound -> respond(NotFound, domainMessage.message)
   }
 }
