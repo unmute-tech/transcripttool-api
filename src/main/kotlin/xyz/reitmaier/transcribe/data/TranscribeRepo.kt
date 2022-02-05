@@ -1,12 +1,9 @@
 package xyz.reitmaier.transcribe.data
 
 import com.github.michaelbull.logging.InlineLogger
-import xyz.reitmaier.transcribe.db.TranscribeDb
 import com.github.michaelbull.result.*
 import xyz.reitmaier.transcribe.auth.PasswordEncryptor
-import xyz.reitmaier.transcribe.db.Task
-import xyz.reitmaier.transcribe.db.Transcript
-import xyz.reitmaier.transcribe.db.User
+import xyz.reitmaier.transcribe.db.*
 
 class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor: PasswordEncryptor) {
   private val log = InlineLogger()
@@ -84,6 +81,13 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
   fun getUserTask(taskId: TaskId, userId: UserId) : DomainResult<Task> =
     tasks.selectTaskByIdAndUserId(userId, taskId).executeAsOneOrNull().toResultOr { TaskNotFound }
 
+  fun getHydratedUserTasks(userId: UserId) : DomainResult<List<TaskDto>> =
+    runCatching {
+      tasks.hydratedUserTasks(userId).executeAsList().map { it.toDto() }
+    }.mapError { DatabaseError }
+
+  fun getLatestTranscript(taskId: TaskId) : DomainResult<Transcript> =
+    transcripts.selectLatestTranscript(taskId).executeAsOneOrNull().toResultOr { TranscriptNotFound }
 
   fun findUserByRefreshToken(refreshToken: RefreshToken) : DomainResult<User> = runCatching {
     users.findUserByRefreshToken(refreshToken).executeAsOne()
@@ -95,3 +99,4 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
 
   private fun lastId() : Int = settings.lastInsertedIdAsLong().executeAsOne().toInt()
 }
+

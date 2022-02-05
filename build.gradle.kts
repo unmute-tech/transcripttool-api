@@ -40,6 +40,7 @@ dependencies {
   implementation("io.ktor:ktor-server-core:$ktor_version")
   implementation("io.ktor:ktor-server-auth:$ktor_version")
   implementation("io.ktor:ktor-server-auth-jwt:$ktor_version")
+  implementation("io.ktor:ktor-server-auto-head-response:$ktor_version")
   implementation("io.ktor:ktor-server-content-negotiation:$ktor_version")
   implementation("io.ktor:ktor-server-default-headers:$ktor_version")
   implementation("io.ktor:ktor-server-partial-content:$ktor_version")

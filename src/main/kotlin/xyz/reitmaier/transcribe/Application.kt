@@ -10,7 +10,6 @@ import xyz.reitmaier.transcribe.plugins.*
 fun main(args: Array<String>): Unit = EngineMain.main(args)
 
 fun Application.module(testing: Boolean = false) {
-  install(CallLogging)
   val jwtConfig = JWTConfig.from(environment.config)
   val passwordEncryptor = PasswordEncryptor(jwtConfig)
   val db = configureDB()

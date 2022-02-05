@@ -3,6 +3,7 @@ package xyz.reitmaier.transcribe.data
 import com.github.michaelbull.result.*
 import kotlinx.serialization.Serializable
 import org.joda.time.LocalDateTime
+import xyz.reitmaier.transcribe.db.Hydrated_task
 import xyz.reitmaier.transcribe.db.Task
 import java.time.Clock
 import java.time.Instant
@@ -66,18 +67,30 @@ data class TaskDto(
   val displayName: String,
   val lengthMs: Long,
   val provenance: TaskProvenance,
+  val transcript: String,
 
   @Serializable(with = LocalDateTimeSerializer::class)
   val created_at: LocalDateTime,
   @Serializable(with = LocalDateTimeSerializer::class)
   val updated_at: LocalDateTime,
 )
-fun Task.toDto() : TaskDto =
+fun Hydrated_task.toDto() =
   TaskDto(
     id = id,
     displayName = display_name,
     lengthMs = length,
     provenance = provenance,
+    transcript = transcript ?: "",
+    created_at = created_at,
+    updated_at = updated_at
+  )
+fun Task.toDto(transcript: String) : TaskDto =
+  TaskDto(
+    id = id,
+    displayName = display_name,
+    lengthMs = length,
+    provenance = provenance,
+    transcript = transcript,
     created_at = created_at,
     updated_at = updated_at
   )

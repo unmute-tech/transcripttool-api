@@ -6,6 +6,8 @@ import io.ktor.server.response.*
 import io.ktor.server.request.*
 
 fun Application.configureHTTP() {
+  install(CallLogging)
+  install(AutoHeadResponse)
   install(DefaultHeaders) {
     header("X-Engine", "Ktor") // will send this header with each response
   }

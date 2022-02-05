@@ -6,6 +6,7 @@ import com.github.michaelbull.logging.InlineLogger
 import com.github.michaelbull.result.*
 import com.github.michaelbull.result.coroutines.binding.binding
 import io.ktor.http.*
+import io.ktor.http.HttpStatusCode.Companion.PartialContent
 import io.ktor.http.content.*
 import io.ktor.server.routing.*
 import io.ktor.server.application.*
@@ -112,69 +113,83 @@ fun Application.configureRouting(repo: TranscribeRepo,
         val mobile = call.getMobileOfAuthenticatedUser()
         call.respondText("Hello, $mobile!")
       }
-      get("/tasks") {
-        val mobile = call.getMobileOfAuthenticatedUser()
-        call.respondText("Hello, $mobile!")
-      }
-      post("/task") {
-        val mobile = call.getMobileOfAuthenticatedUser()
-        val user = repo.findUserByMobile(mobile).get() ?: return@post call.respondDomainMessage(UserNotFound)
-        val multipartData = call.receiveMultipart().readAllParts()
-
-        val fileItem = multipartData.filterIsInstance<PartData.FileItem>().firstOrNull() ?: return@post call.respondDomainMessage(FileMissing)
-        val displayName = fileItem.originalFileName ?: return@post call.respondDomainMessage(FileNameMissing).also { fileItem.dispose() }
-
-        val formItems = multipartData.filterIsInstance<PartData.FormItem>()
-        val length = formItems.firstOrNull { it.name == "length" }?.value?.toLongOrNull() ?: return@post call.respondDomainMessage(ContentLengthMissing).also { fileItem.dispose() }
-
-        val fileName = "${UUID.randomUUID()}.task"
-
-        val file = File("data/$fileName")
-
-        // use InputStream from part to save file
-        fileItem.streamProvider().use { its ->
-          // copy the stream to the file with buffering
-          file.outputStream().buffered().use {
-            // note that this is blocking
-            its.copyTo(it)
-          }
-        }
-        fileItem.dispose()
-        repo.insertTask(user.id,displayName,length,file.path,TaskProvenance.LOCAL).map { task ->  task.id}
-          .fold(
-            success = { call.respond(HttpStatusCode.Created,it.value)},
-            failure = { call.respondDomainMessage(it)}
+      route("/tasks") {
+        get {
+          val mobile = call.getMobileOfAuthenticatedUser()
+          binding<List<TaskDto>, DomainMessage> {
+            val user = repo.findUserByMobile(mobile).bind()
+            val tasks = repo.getHydratedUserTasks(user.id).bind()
+            tasks
+          }.fold(
+            success = { taskList -> call.respond(HttpStatusCode.OK, taskList)},
+            failure = { call.respondDomainMessage(it) }
           )
-      }
 
-      post("/task/{$TASK_ID_PARAMETER}/transcript") {
-        val mobile = call.getMobileOfAuthenticatedUser()
-        binding<Int, DomainMessage> {
-          val user = repo.findUserByMobile(mobile).bind()
-          val task = repo.getUserTask(
-            taskId = call.parameters.readTaskId().bind(),
-            userId = user.id
-          ).bind()
-          val transcripts = call.receiveOrNull<List<NewTranscript>>()
-            .toResultOr { InvalidRequest }.bind()
-          repo.insertTranscripts(task.id, transcripts).bind()
-        }.fold(
-          success = { n -> call.respond(HttpStatusCode.Created, n)},
-          failure = { call.respondDomainMessage(it) }
-        )
+        }
+        post {
+          val mobile = call.getMobileOfAuthenticatedUser()
+          val user = repo.findUserByMobile(mobile).get() ?: return@post call.respondDomainMessage(UserNotFound)
+          val multipartData = call.receiveMultipart().readAllParts()
 
-      }
+          val fileItem = multipartData.filterIsInstance<PartData.FileItem>().firstOrNull() ?: return@post call.respondDomainMessage(FileMissing)
+          val displayName = fileItem.originalFileName ?: return@post call.respondDomainMessage(FileNameMissing).also { fileItem.dispose() }
 
-      post("/task-old") {
-        val mobile = call.getMobileOfAuthenticatedUser()
-        binding <TaskDto, DomainMessage> {
-          val user = repo.findUserByMobile(mobile).bind()
-          val taskRequest = call.receiveOrNull<TaskRequest>().toResultOr { InvalidRequest }.bind()
-          repo.insertTask(user.id, displayName = taskRequest.displayName, length = taskRequest.lengthMs, path = taskRequest.displayName, provenance = TaskProvenance.REMOTE).bind().toDto()
-        }.fold(
-          success = { call.respond(HttpStatusCode.Created, it.id) },
-          failure = { call.respondDomainMessage(it) }
-        )
+          val formItems = multipartData.filterIsInstance<PartData.FormItem>()
+          val length = formItems.firstOrNull { it.name == "length" }?.value?.toLongOrNull() ?: return@post call.respondDomainMessage(ContentLengthMissing).also { fileItem.dispose() }
+
+          val fileName = "${UUID.randomUUID()}.task"
+
+          val file = File("data/$fileName")
+
+          // use InputStream from part to save file
+          fileItem.streamProvider().use { its ->
+            // copy the stream to the file with buffering
+            file.outputStream().buffered().use {
+              // note that this is blocking
+              its.copyTo(it)
+            }
+          }
+          fileItem.dispose()
+          repo.insertTask(user.id,displayName,length,file.path,TaskProvenance.LOCAL).map { task ->  task.id}
+            .fold(
+              success = { call.respond(HttpStatusCode.Created,it.value)},
+              failure = { call.respondDomainMessage(it)}
+            )
+        }
+        get("/{$TASK_ID_PARAMETER}") {
+          val mobile = call.getMobileOfAuthenticatedUser()
+          binding<TaskDto, DomainMessage> {
+            val user = repo.findUserByMobile(mobile).bind()
+            val task = repo.getUserTask(
+              taskId = call.parameters.readTaskId().bind(),
+              userId = user.id
+            ).bind()
+
+            // transcript may or may not exist yet
+            val transcript = repo.getLatestTranscript(task.id).get()?.transcript ?: ""
+            task.toDto(transcript)
+          }.fold(
+            success = { n -> call.respond(HttpStatusCode.Created, n)},
+            failure = { call.respondDomainMessage(it) }
+          )
+        }
+        post("/{$TASK_ID_PARAMETER}/transcript") {
+          val mobile = call.getMobileOfAuthenticatedUser()
+          binding<Int, DomainMessage> {
+            val user = repo.findUserByMobile(mobile).bind()
+            val task = repo.getUserTask(
+              taskId = call.parameters.readTaskId().bind(),
+              userId = user.id
+            ).bind()
+            val transcripts = call.receiveOrNull<List<NewTranscript>>()
+              .toResultOr { InvalidRequest }.bind()
+            repo.insertTranscripts(task.id, transcripts).bind()
+          }.fold(
+            success = { n -> call.respond(HttpStatusCode.Created, n)},
+            failure = { call.respondDomainMessage(it) }
+          )
+
+        }
       }
     }
   }
