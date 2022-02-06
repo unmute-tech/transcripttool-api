@@ -142,6 +142,7 @@ fun Application.configureRouting(repo: TranscribeRepo,
           val fileName = "${UUID.randomUUID()}.task"
 
           val file = File("data/$fileName")
+          log.debug { "Writing to file: ${file.absolutePath}" }
 
           // use InputStream from part to save file
           fileItem.streamProvider().use { its ->
