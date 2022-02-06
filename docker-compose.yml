@@ -4,7 +4,7 @@ services:
 
   transcribeapi:
     container_name: transcribeapi
-    build: transcribeapi:0.0.1
+    image: transcribeapi:0.0.1
     depends_on:
       - mariadb-transcribeapi
     networks:
