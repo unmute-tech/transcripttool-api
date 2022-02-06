@@ -5,10 +5,8 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.map
 import kotlinx.datetime.*
-import xyz.reitmaier.transcribe.data.AccessToken
-import xyz.reitmaier.transcribe.data.DomainResult
-import xyz.reitmaier.transcribe.data.RefreshToken
-import xyz.reitmaier.transcribe.data.TranscribeRepo
+import kotlinx.serialization.Serializable
+import xyz.reitmaier.transcribe.data.*
 import xyz.reitmaier.transcribe.db.User
 import xyz.reitmaier.transcribe.plugins.JWTConfig
 import java.util.*
@@ -18,11 +16,12 @@ import kotlin.time.Duration.Companion.seconds
 const val EXPIRES_IN_SECONDS = 120
 const val CLAIM_MOBILE = "mobile"
 
-@kotlinx.serialization.Serializable
+@Serializable
 data class AuthResponse(
   val accessToken: AccessToken,
   val refreshToken: RefreshToken,
-  val expiresIn: Int = EXPIRES_IN_SECONDS,
+  @Serializable(with = InstantEpochSerializer::class)
+  val expiresAt: Instant,
 )
 class AuthService(
   private val repo: TranscribeRepo,
@@ -50,7 +49,7 @@ class AuthService(
     }
 
     return tokenResult.map { token ->
-      AuthResponse(accessToken = accessToken, refreshToken = token)
+      AuthResponse(accessToken = accessToken, refreshToken = token, expiresAt = expiresAt)
     }
   }
 }

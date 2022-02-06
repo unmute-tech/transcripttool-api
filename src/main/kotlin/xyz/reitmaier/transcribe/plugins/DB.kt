@@ -67,6 +67,7 @@ fun Application.configureDB(): TranscribeDb {
     transcriptAdapter = Transcript.Adapter(
       idAdapter = transcriptIdAdapter,
       task_idAdapter = taskIdAdapter,
+      client_updated_atAdapter = timestampAdapter,
       created_atAdapter = timestampAdapter,
       updated_atAdapter = timestampAdapter,
     )

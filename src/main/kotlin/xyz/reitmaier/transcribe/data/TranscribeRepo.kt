@@ -29,6 +29,7 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
             region_start = transcript.regionStart,
             region_end = transcript.regionEnd,
             transcript = transcript.transcript,
+            client_updated_at = transcript.updatedAt,
             created_at = timestamp,
             updated_at = timestamp,
           )
@@ -37,20 +38,20 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
       }
     }.mapError { DatabaseError }
 
-  private fun insertTranscript(taskId: TaskId, transcript: String, regionStart: Int, regionEnd: Int) : DomainResult<Transcript>  =
-    runCatching {
-      val timestamp = Clock.System.now()
-      transcripts.addTranscript(
-        task_id = taskId,
-        region_start = regionStart,
-        region_end = regionEnd,
-        transcript = transcript,
-        created_at = timestamp,
-        updated_at = timestamp
-      )
-      val transcriptId = TranscriptId(lastId())
-      transcripts.selectTranscript(transcriptId).executeAsOne()
-    }.mapError { DatabaseError }
+//  private fun insertTranscript(taskId: TaskId, transcript: String, regionStart: Int, regionEnd: Int) : DomainResult<Transcript>  =
+//    runCatching {
+//      val timestamp = Clock.System.now()
+//      transcripts.addTranscript(
+//        task_id = taskId,
+//        region_start = regionStart,
+//        region_end = regionEnd,
+//        transcript = transcript,
+//        created_at = timestamp,
+//        updated_at = timestamp
+//      )
+//      val transcriptId = TranscriptId(lastId())
+//      transcripts.selectTranscript(transcriptId).executeAsOne()
+//    }.mapError { DatabaseError }
 
   fun insertTask(userId: UserId, displayName: String, length: Long, path: String, provenance: TaskProvenance, ) : DomainResult<Task> =
     runCatching { db.transactionWithResult<Task> {

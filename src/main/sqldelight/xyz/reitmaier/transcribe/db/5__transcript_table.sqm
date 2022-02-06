@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS transcript
     transcript TEXT NOT NULL,
     region_start INT NOT NULL,
     region_end INT NOT NULL,
+    client_updated_at BIGINT AS Instant NOT NULL,
     updated_at BIGINT AS Instant NOT NULL,
     created_at BIGINT AS Instant NOT NULL
 );

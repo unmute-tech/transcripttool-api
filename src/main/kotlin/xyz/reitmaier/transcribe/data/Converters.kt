@@ -14,10 +14,10 @@ import java.text.SimpleDateFormat
 
 object UserIdSerializer : KSerializer<UserId> {
   override val descriptor: SerialDescriptor
-    get() = PrimitiveSerialDescriptor("data.UserId", PrimitiveKind.STRING)
+    get() = PrimitiveSerialDescriptor("data.UserId", PrimitiveKind.INT)
 
   override fun serialize(encoder: Encoder, value: UserId) {
-    encoder.encodeString(value.value.toString())
+    encoder.encodeInt(value.value)
   }
 
   override fun deserialize(decoder: Decoder): UserId {
@@ -27,10 +27,10 @@ object UserIdSerializer : KSerializer<UserId> {
 
 object TranscriptIdSerializer : KSerializer<TranscriptId> {
   override val descriptor: SerialDescriptor
-    get() = PrimitiveSerialDescriptor("data.TranscriptId", PrimitiveKind.STRING)
+    get() = PrimitiveSerialDescriptor("data.TranscriptId", PrimitiveKind.INT)
 
   override fun serialize(encoder: Encoder, value: TranscriptId) {
-    encoder.encodeString(value.value.toString())
+    encoder.encodeInt(value.value)
   }
 
   override fun deserialize(decoder: Decoder): TranscriptId {
@@ -40,10 +40,10 @@ object TranscriptIdSerializer : KSerializer<TranscriptId> {
 
 object TaskIdSerializer : KSerializer<TaskId> {
   override val descriptor: SerialDescriptor
-    get() = PrimitiveSerialDescriptor("data.TaskId", PrimitiveKind.STRING)
+    get() = PrimitiveSerialDescriptor("data.TaskId", PrimitiveKind.INT)
 
   override fun serialize(encoder: Encoder, value: TaskId) {
-    encoder.encodeString(value.value.toString())
+    encoder.encodeInt(value.value)
   }
 
   override fun deserialize(decoder: Decoder): TaskId {

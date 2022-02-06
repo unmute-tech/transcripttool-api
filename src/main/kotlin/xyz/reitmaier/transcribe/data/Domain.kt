@@ -3,11 +3,9 @@ package xyz.reitmaier.transcribe.data
 import com.github.michaelbull.result.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
 import xyz.reitmaier.transcribe.db.Hydrated_task
 import xyz.reitmaier.transcribe.db.Task
-import kotlinx.datetime.serializers.InstantIso8601Serializer
 import java.util.UUID
 
 /*
@@ -31,7 +29,7 @@ data class NewTranscript(
   val transcript: String,
   val regionStart: Int,
   val regionEnd: Int,
-  @Serializable(with = InstantIso8601Serializer::class)
+  @Serializable(with = InstantEpochSerializer::class)
   val updatedAt: Instant,
 )
 {
