@@ -77,4 +77,4 @@ networks:
 
   mariadb-transcribeapi-network:
     external: false
-    name: mariadb-transcribeapi-network:
+    name: mariadb-transcribeapi-network
