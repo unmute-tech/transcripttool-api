@@ -6,8 +6,8 @@ import com.github.michaelbull.logging.InlineLogger
 import com.github.michaelbull.result.*
 import com.github.michaelbull.result.coroutines.binding.binding
 import io.ktor.http.*
+import io.ktor.http.HttpStatusCode.Companion.MultiStatus
 import io.ktor.http.HttpStatusCode.Companion.NotFound
-import io.ktor.http.HttpStatusCode.Companion.PartialContent
 import io.ktor.http.content.*
 import io.ktor.server.routing.*
 import io.ktor.server.application.*
@@ -20,6 +20,7 @@ import xyz.reitmaier.transcribe.auth.AuthResponse
 import xyz.reitmaier.transcribe.auth.AuthService
 import xyz.reitmaier.transcribe.auth.CLAIM_MOBILE
 import xyz.reitmaier.transcribe.data.*
+import xyz.reitmaier.transcribe.db.Task
 import java.io.File
 import java.util.UUID
 
@@ -132,7 +133,7 @@ fun Application.configureRouting(repo: TranscribeRepo,
           val user = repo.findUserByMobile(mobile).get() ?: return@post call.respondDomainMessage(UserNotFound)
           val multipartData = call.receiveMultipart().readAllParts()
 
-          val fileItem = multipartData.filterIsInstance<PartData.FileItem>().firstOrNull() ?: return@post call.respondDomainMessage(FileMissing)
+          val fileItem = multipartData.filterIsInstance<PartData.FileItem>().firstOrNull() ?: return@post call.respondDomainMessage(RequestFileMissing)
           val displayName = fileItem.originalFileName ?: return@post call.respondDomainMessage(FileNameMissing).also { fileItem.dispose() }
 
           val formItems = multipartData.filterIsInstance<PartData.FormItem>()
@@ -151,12 +152,17 @@ fun Application.configureRouting(repo: TranscribeRepo,
             }
           }
           fileItem.dispose()
+//          // TODO Remove after testing
+//          val file2 = file.copyTo(File("${file.path}-2"))
+//          repo.insertTask(user.id,displayName,length,file2.path,TaskProvenance.REMOTE)
+//          // TODO Remove until here
           repo.insertTask(user.id,displayName,length,file.path,TaskProvenance.LOCAL).map { task ->  task.id}
             .fold(
               success = { call.respond(HttpStatusCode.Created,it.value)},
               failure = { call.respondDomainMessage(it)}
             )
         }
+
         get("/{$TASK_ID_PARAMETER}") {
           val mobile = call.getMobileOfAuthenticatedUser()
           binding<TaskDto, DomainMessage> {
@@ -191,6 +197,35 @@ fun Application.configureRouting(repo: TranscribeRepo,
           )
 
         }
+
+        get("/{$TASK_ID_PARAMETER}/file") {
+          val mobile = call.getMobileOfAuthenticatedUser()
+          binding<Pair<File, Task>, DomainMessage> {
+            val user = repo.findUserByMobile(mobile).bind()
+            val task = repo.getUserTask(
+              taskId = call.parameters.readTaskId().bind(),
+              userId = user.id
+            ).bind()
+            Pair(File(task.path), task)
+          }.andThen { pair ->
+              if(pair.first.exists()) {
+                Ok(pair)
+              } else {
+                Err(FileNotFound)
+              }
+            }
+            .fold(
+              failure = { call.respondDomainMessage(it) },
+              success = { pair ->
+                call.response.header(
+                  HttpHeaders.ContentDisposition,
+                  ContentDisposition.Attachment.withParameter(ContentDisposition.Parameters.FileName, pair.second.display_name)
+                    .toString()
+                )
+                call.respondFile(pair.first)
+              },
+          )
+        }
       }
     }
   }
@@ -224,12 +259,13 @@ suspend fun ApplicationCall.respondDomainMessage(domainMessage: DomainMessage) {
     UserNotFound -> respond(HttpStatusCode.Forbidden, domainMessage.message)
     PasswordIncorrect -> respond(HttpStatusCode.Forbidden, domainMessage.message)
     MobileOrPasswordIncorrect -> respond(HttpStatusCode.Unauthorized, domainMessage.message)
-    FileMissing -> respond(HttpStatusCode.BadRequest, domainMessage.message)
+    RequestFileMissing -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     FileNameMissing -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     ContentLengthMissing -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     TaskIdInvalid -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     TaskIdRequired -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     TaskNotFound -> respond(HttpStatusCode.BadRequest, domainMessage.message)
-    TranscriptNotFound -> respond(NotFound, domainMessage.message)
+    TranscriptNotFound -> respond(HttpStatusCode.NotFound, domainMessage.message)
+    FileNotFound -> respond(HttpStatusCode.NotFound, domainMessage.message)
   }
 }

@@ -56,8 +56,8 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
   fun insertTask(userId: UserId, displayName: String, length: Long, path: String, provenance: TaskProvenance, ) : DomainResult<Task> =
     runCatching { db.transactionWithResult<Task> {
       val timestamp = Clock.System.now()
-        tasks.addTask(
-          user_id = userId,
+      tasks.addTask(
+        user_id = userId,
           display_name = displayName,
           length = length,
           path = path,
