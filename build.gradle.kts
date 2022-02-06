@@ -6,7 +6,7 @@ val postgres_version: String by project
 val sqldelight_version: String by project
 val hikaricp_version: String by project
 val main_class by extra("io.ktor.server.netty.EngineMain")
-val docker_image = "transcriptapi:0.0.1"
+val docker_image = "transcribeapi:0.0.1"
 plugins {
   application
   kotlin("jvm") version "1.6.10"
