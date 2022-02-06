@@ -2,6 +2,22 @@ version: '3.1'
 
 services:
 
+  mariadb-transcribeapi:
+    image: mariadb:latest
+    container_name: mariadb-transcribeapi
+    environment:
+      # TODO Make these into env variables MYSQL_PASSWORD=${MARIADB_PASSWORD}
+      - MYSQL_DATABASE=transcribe
+      - MYSQL_USER=transcribe
+      - MYSQL_PASSWORD=transcribe
+      - MYSQL_ROOT_PASSWORD=transcribe
+    networks:
+      - mariadb-transcribeapi-network
+    volumes:
+      - mariadb_transcribe_data:/var/lib/mysql
+    command: --default-storage-engine innodb
+    restart: unless-stopped
+
   transcribeapi:
     container_name: transcribeapi
     image: transcribeapi:0.0.1
@@ -50,21 +66,6 @@ services:
       - "traefik.http.services.transcribedb-svc.loadbalancer.server.port=8080"
 
 
-  mariadb-transcribe:
-    image: mariadb:latest
-    container_name: mariadb-transcribe
-    environment:
-      # TODO Make these into env variables MYSQL_PASSWORD=${MARIADB_PASSWORD}
-      - MYSQL_DATABASE=transcribe
-      - MYSQL_USER=transcribe
-      - MYSQL_PASSWORD=transcribe
-      - MYSQL_ROOT_PASSWORD=transcribe
-    networks:
-      - mariadb-transcribeapi-network
-    volumes:
-      - mariadb_transcribe_data:/var/lib/mysql
-    command: --default-storage-engine innodb
-    restart: unless-stopped
 
 volumes:
   mariadb_transcribe_data:
