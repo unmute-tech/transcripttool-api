@@ -5,7 +5,8 @@ val coroutines_version: String by project
 val postgres_version: String by project
 val sqldelight_version: String by project
 val hikaricp_version: String by project
-
+val main_class by extra("io.ktor.server.netty.EngineMain")
+val docker_image = "transcriptapi:0.0.1"
 plugins {
   application
   kotlin("jvm") version "1.6.10"
@@ -13,6 +14,11 @@ plugins {
 
   // DB
   id("com.squareup.sqldelight") version "1.5.3"
+
+  // FatJar for docker deploy
+//  id("com.github.johnrengelman.shadow") version "6.1.0"
+
+  id("com.google.cloud.tools.jib") version "3.2.0"
 }
 
 sqldelight {
@@ -27,7 +33,16 @@ sqldelight {
 group = "xyz.reitmaier"
 version = "0.0.1"
 application {
-  mainClass.set("xyz.reitmaier.ApplicationKt")
+  mainClass.set(main_class)
+
+//  applicationDefaultJvmArgs = listOf(
+//    "-server",
+//    "-Djava.awt.headless=true",
+//    "-Xms128m",
+//    "-Xmx256m",
+//    "-XX:+UseG1GC",
+//    "-XX:MaxGCPauseMillis=100"
+//  )
 }
 
 repositories {
@@ -44,6 +59,14 @@ kotlin {
     }
   }
 }
+
+//tasks {
+//  named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
+//    archiveBaseName.set("transcribeapi")
+//    archiveClassifier.set(null as String?)
+//    archiveVersion.set("")
+//  }
+//}
 
 dependencies {
   // ktor
@@ -91,4 +114,24 @@ dependencies {
   // testing
   testImplementation("io.ktor:ktor-server-tests:$ktor_version")
   testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
+}
+
+jib {
+  container {
+    ports = listOf("8080")
+    mainClass = main_class
+    to.image = docker_image
+    appRoot = "/app"
+    // good defauls intended for Java 8 (>= 8u191) containers
+    jvmFlags = listOf(
+      "-server",
+      "-Djava.awt.headless=true",
+      "-XX:InitialRAMFraction=2",
+      "-XX:MinRAMFraction=2",
+      "-XX:MaxRAMFraction=2",
+      "-XX:+UseG1GC",
+      "-XX:MaxGCPauseMillis=100",
+      "-XX:+UseStringDeduplication"
+    )
+  }
 }

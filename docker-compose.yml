@@ -1,0 +1,80 @@
+version: '3.1'
+
+services:
+
+  transcribeapi:
+    container_name: transcribeapi
+    build: ./
+    depends_on:
+      - mariadb-transcribeapi
+    networks:
+      - traefik_proxy
+      - mariadb-transcribeapi-network
+    volumes:
+    - ./data:/app/data
+#    - ./google-credentials.json:/app/google-credentials.json
+    environment:
+      - DATABASE_HOST=mariadb-transcribeapi
+      - DATABASE_DB=transcribe
+      - DATABASE_USER=transcribe
+      - DATABASE_PASSWORD=transcribe
+      - DATABASE_PORT=3306
+      # - GOOGLE_APPLICATION_CREDENTIALS=/app/google-credentials.json
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.transcribeapi-rtr.entrypoints=https"
+      - "traefik.http.routers.transcribeapi-rtr.rule=Host(`transcribeapi.reitmaier.xyz`)"
+      ## Middlewares
+      - "traefik.http.routers.transcribeapi-rtr.middlewares=rate-limit@file"
+      ## HTTP Services
+      - "traefik.http.routers.transcribeapi-rtr.service=transcribeapi-svc"
+      - "traefik.http.services.transcribeapi-svc.loadbalancer.server.port=8080"
+
+  adminer2:
+    image: adminer
+    container_name: adminer2
+    restart: always
+    networks:
+      - traefik_proxy
+      - mariadb-transcribeapi-network
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.transcribedb-rtr.entrypoints=https"
+      - "traefik.http.routers.transcribedb-rtr.rule=Host(`transcribedb.reitmaier.xyz`)"
+      ## Middlewares
+      - "traefik.http.routers.transcribedb-rtr.middlewares=rate-limit@file,oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.transcribedb-rtr.service=transcribedb-svc"
+      - "traefik.http.services.transcribedb-svc.loadbalancer.server.port=8080"
+
+
+  mariadb-transcribe:
+    image: mariadb:latest
+    container_name: mariadb-transcribe
+    environment:
+      # TODO Make these into env variables MYSQL_PASSWORD=${MARIADB_PASSWORD}
+      - MYSQL_DATABASE=transcribe
+      - MYSQL_USER=transcribe
+      - MYSQL_PASSWORD=transcribe
+      - MYSQL_ROOT_PASSWORD=transcribe
+    networks:
+      - mariadb-transcribeapi-network
+    volumes:
+      - mariadb_transcribe_data:/var/lib/mysql
+    command: --default-storage-engine innodb
+    restart: unless-stopped
+
+volumes:
+  mariadb_transcribe_data:
+
+# docker network create traefik_proxy
+
+networks:
+  traefik_proxy:
+    external: true
+
+  mariadb-transcribeapi-network:
+    external: false
+    name: mariadb-transcribeapi-network:
