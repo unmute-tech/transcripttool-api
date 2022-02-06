@@ -7,6 +7,7 @@ val sqldelight_version: String by project
 val hikaricp_version: String by project
 val main_class by extra("io.ktor.server.netty.EngineMain")
 val docker_image = "transcribeapi:0.0.1"
+
 plugins {
   application
   kotlin("jvm") version "1.6.10"
@@ -15,9 +16,7 @@ plugins {
   // DB
   id("com.squareup.sqldelight") version "1.5.3"
 
-  // FatJar for docker deploy
-//  id("com.github.johnrengelman.shadow") version "6.1.0"
-
+  // Docker
   id("com.google.cloud.tools.jib") version "3.2.0"
 }
 
@@ -26,23 +25,12 @@ sqldelight {
     packageName = "xyz.reitmaier.transcribe.db"
     dialect = "mysql"
     deriveSchemaFromMigrations = true
-//    migrationOutputDirectory = file("$buildDir/resources/main/migrations")
-//    migrationOutputFileFormat = ".sql"
   }
 }
 group = "xyz.reitmaier"
 version = "0.0.1"
 application {
   mainClass.set(main_class)
-
-//  applicationDefaultJvmArgs = listOf(
-//    "-server",
-//    "-Djava.awt.headless=true",
-//    "-Xms128m",
-//    "-Xmx256m",
-//    "-XX:+UseG1GC",
-//    "-XX:MaxGCPauseMillis=100"
-//  )
 }
 
 repositories {
@@ -60,14 +48,6 @@ kotlin {
   }
 }
 
-//tasks {
-//  named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
-//    archiveBaseName.set("transcribeapi")
-//    archiveClassifier.set(null as String?)
-//    archiveVersion.set("")
-//  }
-//}
-
 dependencies {
   // ktor
   implementation("io.ktor:ktor-server-core:$ktor_version")
@@ -83,9 +63,6 @@ dependencies {
   // db -- config
   implementation("com.zaxxer:HikariCP:$hikaricp_version")
 
-  // db -- postgres
-//  implementation("org.postgresql:postgresql:$postgres_version")
-
   // db -- mysql
   implementation("mysql:mysql-connector-java:8.0.28")
 
@@ -95,7 +72,6 @@ dependencies {
   implementation("com.squareup.sqldelight:coroutines-extensions:$sqldelight_version")
 
   // utilities
-//  implementation("joda-time:joda-time:2.10.13")
   implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.2")
 
   // logging
