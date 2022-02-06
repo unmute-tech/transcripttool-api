@@ -31,9 +31,9 @@ services:
       - "traefik.http.routers.transcribeapi-rtr.service=transcribeapi-svc"
       - "traefik.http.services.transcribeapi-svc.loadbalancer.server.port=8080"
 
-  adminer2:
+  adminer-transcribeapi:
     image: adminer
-    container_name: adminer2
+    container_name: adminer-transcribeapi
     restart: always
     networks:
       - traefik_proxy
