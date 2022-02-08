@@ -14,6 +14,7 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.config.*
+import io.ktor.server.http.content.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import xyz.reitmaier.transcribe.auth.AuthResponse
@@ -70,8 +71,9 @@ fun Application.configureRouting(repo: TranscribeRepo,
     }
   }
   routing {
-    get("/") {
-      call.respondText("Hello World!")
+    static("/") {
+      staticRootFolder = File("static")
+      file("privacy_policy.html")
     }
     post("/register") {
       call.receiveOrNull<RegistrationRequest>().toResultOr { InvalidRequest }
