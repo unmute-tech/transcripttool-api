@@ -16,4 +16,3 @@ CREATE TABLE IF NOT EXISTS user
     created_at BIGINT AS Instant NOT NULL,
     CONSTRAINT mobile_number_unique UNIQUE (mobile_number)
 );
-

@@ -1,0 +1,10 @@
+-- user is reserved word in postgres -> users
+ALTER TABLE user  ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT 0;
+INSERT INTO user(password, mobile_number, mobile_operator, name, created_at, is_admin) VALUES
+('911b4d9b1cba05a477c774a1fb0c7534c875d085d67b26d76ae2ce4c1b1c9153'
+,'+19783099058'
+,'Google Voice'
+,'admin'
+,ROUND(UNIX_TIMESTAMP(now()) * 1000)
+,1);
+

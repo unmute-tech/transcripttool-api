@@ -1,0 +1,14 @@
+addRequest:
+INSERT INTO request(user_id, path, extension, length, assignment_strategy, created_at, updated_at) VALUES (?,?,?,?,?, ?, ?);
+
+allRequests:
+SELECT * FROM request ORDER BY updated_at DESC;
+
+getRequest:
+SELECT * FROM request WHERE id = ? LIMIT 1;
+
+assignRequestToTask:
+INSERT INTO assignment(request_id, task_id, assigned_at) VALUES (?, ?, ?);
+
+completeAssignment:
+UPDATE assignment SET completed_at = :completed_at WHERE id = ?;

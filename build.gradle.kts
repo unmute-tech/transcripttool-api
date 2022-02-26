@@ -82,7 +82,6 @@ dependencies {
   // Coroutines
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version")
 
-
   // Result monad for modelling success/failure operations
   implementation("com.michael-bull.kotlin-result:kotlin-result:1.1.14")
   implementation("com.michael-bull.kotlin-result:kotlin-result-coroutines:1.1.14")
@@ -94,7 +93,7 @@ dependencies {
 
 jib {
   container {
-    ports = listOf("8080")
+    ports = listOf("8088")
     mainClass = main_class
     to.image = docker_image
     appRoot = "/app"

@@ -7,26 +7,9 @@ services:
     container_name: adminer-transcribe
     restart: always
     depends_on:
-      - postgres-transcribe
       - mariadb-transcribe
     ports:
       - "8082:8080"
-
-  postgres-transcribe:
-    restart: always
-    container_name: postgres-transcribe
-    image: postgres:13
-    ports:
-      - "5434:5432"
-    environment:
-      - DEBUG=false
-      - POSTGRES_USER=transcribe
-      - POSTGRES_PASSWORD=transcribe
-      - POSTGRES_DB=transcribe
-      - POSTGRES_ROOT_PASSWORD=transcribe
-    volumes:
-      - postgres-transcribe-data:/var/lib/postgresql
-    command: ["postgres", "-c", "log_statement=all"]
 
   mariadb-transcribe:
     image: mariadb:latest
@@ -45,5 +28,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  postgres-transcribe-data:
   mariadb_transcribe_data:

@@ -112,6 +112,31 @@ value class TaskId(val value: Int) {
   }
 }
 
+@Serializable(with = RequestIdSerializer::class)
+@JvmInline
+value class RequestId(val value: Int) {
+  companion object {
+    val TEST = RequestId(1)
+  }
+}
+
+@Serializable(with = AssignmentIdSerializer::class)
+@JvmInline
+value class AssignmentId(val value: Int) {
+  companion object {
+    val TEST = AssignmentId(1)
+  }
+}
+
+@Serializable(with = AssignmentStrategySerializer::class)
+@JvmInline
+value class AssignmentStrategy(val value: Int) {
+  companion object {
+    val TEST = AssignmentStrategy(1)
+    val ALL = AssignmentStrategy(0)
+  }
+}
+
 @Serializable(with = UserIdSerializer::class)
 @JvmInline
 value class UserId(val value: Int) {

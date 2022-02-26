@@ -10,10 +10,7 @@ import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.*
 import kotlinx.datetime.*
 import xyz.reitmaier.transcribe.data.*
-import xyz.reitmaier.transcribe.db.Task
-import xyz.reitmaier.transcribe.db.TranscribeDb
-import xyz.reitmaier.transcribe.db.Transcript
-import xyz.reitmaier.transcribe.db.User
+import xyz.reitmaier.transcribe.db.*
 import java.time.format.DateTimeFormatter
 import javax.sql.DataSource
 
@@ -70,7 +67,22 @@ fun Application.configureDB(): TranscribeDb {
       client_updated_atAdapter = timestampAdapter,
       created_atAdapter = timestampAdapter,
       updated_atAdapter = timestampAdapter,
-    )
+    ),
+    requestAdapter = Request.Adapter(
+      idAdapter = requestIdAdapter,
+      user_idAdapter = userIdAdapter,
+      assignment_strategyAdapter = assingmentStrategyAdapter,
+      created_atAdapter = timestampAdapter,
+      updated_atAdapter = timestampAdapter,
+      completed_atAdapter = timestampAdapter,
+    ),
+    assignmentAdapter = Assignment.Adapter(
+      idAdapter = assignmentIdAdapter,
+      request_idAdapter = requestIdAdapter,
+      task_idAdapter = taskIdAdapter,
+      assigned_atAdapter = timestampAdapter,
+      completed_atAdapter = timestampAdapter,
+    ),
   )
   driver.migrate(db)
 
@@ -107,6 +119,21 @@ private val taskIdAdapter = object : ColumnAdapter<TaskId, Int> {
 private val transcriptIdAdapter = object : ColumnAdapter<TranscriptId, Int> {
   override fun decode(databaseValue: Int): TranscriptId = TranscriptId(databaseValue)
   override fun encode(value: TranscriptId): Int = value.value
+}
+
+private val assingmentStrategyAdapter = object : ColumnAdapter<AssignmentStrategy, Int> {
+  override fun decode(databaseValue: Int): AssignmentStrategy = AssignmentStrategy(databaseValue)
+  override fun encode(value: AssignmentStrategy): Int = value.value
+}
+
+private val requestIdAdapter = object : ColumnAdapter<RequestId, Int> {
+  override fun decode(databaseValue: Int): RequestId = RequestId(databaseValue)
+  override fun encode(value: RequestId): Int = value.value
+}
+
+private val assignmentIdAdapter = object : ColumnAdapter<AssignmentId, Int> {
+  override fun decode(databaseValue: Int): AssignmentId = AssignmentId(databaseValue)
+  override fun encode(value: AssignmentId): Int = value.value
 }
 
 private val mobileNumberAdapter = object : ColumnAdapter<MobileNumber, String> {

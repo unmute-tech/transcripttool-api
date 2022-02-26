@@ -1,0 +1,30 @@
+import kotlinx.datetime.Instant;
+import xyz.reitmaier.transcribe.data.AssignmentId;
+import xyz.reitmaier.transcribe.data.AssignmentStrategy;
+import xyz.reitmaier.transcribe.data.RequestId;
+import xyz.reitmaier.transcribe.data.TaskId;
+import xyz.reitmaier.transcribe.data.UserId;
+
+-- user is reserved word in postgres -> users
+CREATE TABLE IF NOT EXISTS request
+(
+    id INT AS RequestId NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    user_id INT AS UserId NOT NULL REFERENCES user(id),
+    path VARCHAR(255) NOT NULL,
+    extension VARCHAR(32) NOT NULL,
+    length BIGINT NOT NULL, -- Necessary?
+    assignment_strategy INT AS AssignmentStrategy NOT NULL,
+    created_at BIGINT AS Instant NOT NULL,
+    updated_at BIGINT AS Instant NOT NULL,
+    completed_at BIGINT AS Instant,
+--     fcm_token  TEXT AS FcmToken
+    CONSTRAINT path_unique UNIQUE (path)
+);
+
+CREATE TABLE IF NOT EXISTS assignment(
+    id INT AS AssignmentId NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    request_id INT AS RequestId NOT NULL REFERENCES assignment(id),
+    task_id INT AS TaskId NOT NULL REFERENCES task(id),
+    assigned_at BIGINT AS Instant NOT NULL,
+    completed_at BIGINT AS Instant
+);

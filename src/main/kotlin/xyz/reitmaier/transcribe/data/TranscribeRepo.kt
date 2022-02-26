@@ -1,3 +1,5 @@
+@file:Suppress("RemoveExplicitTypeArguments")
+
 package xyz.reitmaier.transcribe.data
 
 import com.github.michaelbull.logging.InlineLogger
@@ -11,6 +13,7 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
   private val users = db.userQueries
   private val tasks = db.taskQueries
   private val transcripts = db.transcriptQueries
+  private val requests = db.requestQueries
   private val settings = db.settingsQueries
 
   fun updateRefreshToken(id: UserId, refreshToken: RefreshToken = RefreshToken.create()) : DomainResult<RefreshToken> =
@@ -67,6 +70,49 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
         )
         val taskId = TaskId(lastId())
         tasks.selectTaskById(taskId).executeAsOne()
+      }
+    }.mapError { DuplicateFile }
+
+  fun insertRequest(userId: UserId, displayName: String, length: Long, path: String, extension: String, assignmentStrategy: AssignmentStrategy, ) : DomainResult<Request> =
+    runCatching {
+      val users = users.allUsers().executeAsList()
+      db.transactionWithResult<Request> {
+        val timestamp = Clock.System.now()
+        requests.addRequest(
+          user_id = userId,
+          length = length,
+          path = path,
+          assignment_strategy = assignmentStrategy,
+          extension = extension,
+          created_at = timestamp,
+          updated_at = timestamp,
+        )
+        val requestId = RequestId(lastId())
+        val request = requests.getRequest(requestId).executeAsOne()
+        // TODO Handle other Assignment Strategies
+        if(assignmentStrategy == AssignmentStrategy.ALL) {
+          // TODO generate sensible displayName
+          users.forEach {  user ->
+            // TODO Length
+            // TODO display Name
+            tasks.addTask(
+              user_id = user.id,
+              path = path,
+              length = 0L,
+              provenance = TaskProvenance.REMOTE,
+              display_name = path,
+              updated_at = timestamp,
+              created_at = timestamp
+            )
+            val taskId = TaskId(lastId())
+            requests.assignRequestToTask(
+              request_id = requestId,
+              task_id = taskId,
+              assigned_at = timestamp,
+            )
+          }
+        }
+        request
       }
     }.mapError { DuplicateFile }
 

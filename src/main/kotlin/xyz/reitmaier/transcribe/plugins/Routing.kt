@@ -6,10 +6,7 @@ import com.github.michaelbull.logging.InlineLogger
 import com.github.michaelbull.result.*
 import com.github.michaelbull.result.coroutines.binding.binding
 import io.ktor.http.*
-import io.ktor.http.HttpStatusCode.Companion.MultiStatus
-import io.ktor.http.HttpStatusCode.Companion.NotFound
 import io.ktor.http.content.*
-import io.ktor.server.routing.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
@@ -17,13 +14,14 @@ import io.ktor.server.config.*
 import io.ktor.server.http.content.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import xyz.reitmaier.transcribe.auth.AuthResponse
 import xyz.reitmaier.transcribe.auth.AuthService
 import xyz.reitmaier.transcribe.auth.CLAIM_MOBILE
 import xyz.reitmaier.transcribe.data.*
 import xyz.reitmaier.transcribe.db.Task
 import java.io.File
-import java.util.UUID
+import java.util.*
 
 data class JWTConfig(
   val audience: String,
@@ -33,7 +31,7 @@ data class JWTConfig(
   val issuer: String,
 ) {
   companion object {
-    fun from(config: ApplicationConfig) : JWTConfig {
+    fun from(config: ApplicationConfig): JWTConfig {
       val jwtAudience = config.property("jwt.audience").getString()
       val jwtRealm = config.property("jwt.realm").getString()
       val jwtSecret = config.property("jwt.secret").getString()
@@ -45,12 +43,23 @@ data class JWTConfig(
 }
 
 
-fun Application.configureRouting(repo: TranscribeRepo,
-                                 jwtConfig: JWTConfig = JWTConfig.from(environment.config)
+fun Application.configureRouting(
+  repo: TranscribeRepo,
+  jwtConfig: JWTConfig = JWTConfig.from(environment.config)
 ) {
   val log = InlineLogger()
   val authService = AuthService(repo, jwtConfig)
   authentication {
+    basic("admin-basic-auth") {
+      realm = "Admin"
+      validate { credentials ->
+        if (credentials.name == "+19783099058" && credentials.password == "JQWm2oSn7KXm") {
+          UserIdPrincipal(credentials.name)
+        } else {
+          null
+        }
+      }
+    }
     jwt("auth-jwt") {
       realm = jwtConfig.realm
       verifier(
@@ -62,7 +71,7 @@ fun Application.configureRouting(repo: TranscribeRepo,
       )
       validate { credential ->
         val mobile = MobileNumber(credential.payload.getClaim(CLAIM_MOBILE).asString())
-        if(repo.findUserByMobile(mobile).get() != null) {
+        if (repo.findUserByMobile(mobile).get() != null) {
           JWTPrincipal(credential.payload)
         } else {
           null
@@ -74,6 +83,11 @@ fun Application.configureRouting(repo: TranscribeRepo,
     static("/") {
       staticRootFolder = File("static")
       file("privacy_policy.html")
+    }
+    authenticate("admin-basic-auth") {
+      get("/admin") {
+        call.respondText("Hello, ${call.principal<UserIdPrincipal>()?.name}!")
+      }
     }
     post("/register") {
       call.receiveOrNull<RegistrationRequest>().toResultOr { InvalidRequest }
@@ -94,21 +108,23 @@ fun Application.configureRouting(repo: TranscribeRepo,
         val response = authService.generateResponse(user, refreshToken).bind()
         response
       }.fold(
-        success = {call.respond(it)},
-        failure = {call.respondDomainMessage(it)}
+        success = { call.respond(it) },
+        failure = { call.respondDomainMessage(it) }
       )
     }
     post("/login") {
       val loginRequest = call.receive<LoginRequest>()
-      log.info { "Login request $loginRequest"}
+      log.info { "Login request $loginRequest" }
       repo.findUserByMobileAndPassword(loginRequest.mobile, loginRequest.password)
-        .andThen { user -> authService.generateResponse(
-          user = user,
-          refreshToken = null
-        ) }
+        .andThen { user ->
+          authService.generateResponse(
+            user = user,
+            refreshToken = null
+          )
+        }
         .fold(
-          success = { authResponse ->  call.respond(authResponse) },
-          failure = { call.respondDomainMessage(it)},
+          success = { authResponse -> call.respond(authResponse) },
+          failure = { call.respondDomainMessage(it) },
         )
     }
 
@@ -125,7 +141,7 @@ fun Application.configureRouting(repo: TranscribeRepo,
             val tasks = repo.getHydratedUserTasks(user.id).bind()
             tasks
           }.fold(
-            success = { taskList -> call.respond(HttpStatusCode.OK, taskList)},
+            success = { taskList -> call.respond(HttpStatusCode.OK, taskList) },
             failure = { call.respondDomainMessage(it) }
           )
 
@@ -135,11 +151,16 @@ fun Application.configureRouting(repo: TranscribeRepo,
           val user = repo.findUserByMobile(mobile).get() ?: return@post call.respondDomainMessage(UserNotFound)
           val multipartData = call.receiveMultipart().readAllParts()
 
-          val fileItem = multipartData.filterIsInstance<PartData.FileItem>().firstOrNull() ?: return@post call.respondDomainMessage(RequestFileMissing)
-          val displayName = fileItem.originalFileName ?: return@post call.respondDomainMessage(FileNameMissing).also { fileItem.dispose() }
+          val fileItem =
+            multipartData.filterIsInstance<PartData.FileItem>().firstOrNull() ?: return@post call.respondDomainMessage(
+              RequestFileMissing
+            )
+          val displayName = fileItem.originalFileName ?: return@post call.respondDomainMessage(FileNameMissing)
+            .also { fileItem.dispose() }
 
           val formItems = multipartData.filterIsInstance<PartData.FormItem>()
-          val length = formItems.firstOrNull { it.name == "length" }?.value?.toLongOrNull() ?: return@post call.respondDomainMessage(ContentLengthMissing).also { fileItem.dispose() }
+          val length = formItems.firstOrNull { it.name == "length" }?.value?.toLongOrNull()
+            ?: return@post call.respondDomainMessage(ContentLengthMissing).also { fileItem.dispose() }
 
           val fileName = "${UUID.randomUUID()}.task"
 
@@ -159,10 +180,10 @@ fun Application.configureRouting(repo: TranscribeRepo,
 //          val file2 = file.copyTo(File("${file.path}-2"))
 //          repo.insertTask(user.id,displayName,length,file2.path,TaskProvenance.REMOTE)
 //          // TODO Remove until here
-          repo.insertTask(user.id,displayName,length,file.path,TaskProvenance.LOCAL).map { task ->  task.id}
+          repo.insertTask(user.id, displayName, length, file.path, TaskProvenance.LOCAL).map { task -> task.id }
             .fold(
-              success = { call.respond(HttpStatusCode.Created,it.value)},
-              failure = { call.respondDomainMessage(it)}
+              success = { call.respond(HttpStatusCode.Created, it.value) },
+              failure = { call.respondDomainMessage(it) }
             )
         }
 
@@ -179,7 +200,7 @@ fun Application.configureRouting(repo: TranscribeRepo,
             val transcript = repo.getLatestTranscript(task.id).get()?.transcript ?: ""
             task.toDto(transcript)
           }.fold(
-            success = { n -> call.respond(HttpStatusCode.Created, n)},
+            success = { n -> call.respond(HttpStatusCode.Created, n) },
             failure = { call.respondDomainMessage(it) }
           )
         }
@@ -195,7 +216,7 @@ fun Application.configureRouting(repo: TranscribeRepo,
               .toResultOr { InvalidRequest }.bind()
             repo.insertTranscripts(task.id, transcripts).bind()
           }.fold(
-            success = { n -> call.respond(HttpStatusCode.Created, n)},
+            success = { n -> call.respond(HttpStatusCode.Created, n) },
             failure = { call.respondDomainMessage(it) }
           )
 
@@ -211,28 +232,36 @@ fun Application.configureRouting(repo: TranscribeRepo,
             ).bind()
             Pair(File(task.path), task)
           }.andThen { pair ->
-              if(pair.first.exists()) {
-                Ok(pair)
-              } else {
-                Err(FileNotFound)
-              }
+            if (pair.first.exists()) {
+              Ok(pair)
+            } else {
+              Err(FileNotFound)
             }
+          }
             .fold(
               failure = { call.respondDomainMessage(it) },
               success = { pair ->
                 call.response.header(
                   HttpHeaders.ContentDisposition,
-                  ContentDisposition.Attachment.withParameter(ContentDisposition.Parameters.FileName, pair.second.display_name)
+                  ContentDisposition.Attachment.withParameter(
+                    ContentDisposition.Parameters.FileName,
+                    pair.second.display_name
+                  )
                     .toString()
                 )
                 call.respondFile(pair.first)
               },
-          )
+            )
         }
       }
     }
+    post("/error") {
+      val errorMessage = call.receiveOrNull<String>().toResultOr { InvalidRequest }
+      log.debug { errorMessage }
+    }
   }
 }
+
 const val TASK_ID_PARAMETER = "taskId"
 private fun Parameters.readTaskId(): Result<TaskId, DomainMessage> {
   return get(TASK_ID_PARAMETER)
@@ -242,20 +271,22 @@ private fun Parameters.readTaskId(): Result<TaskId, DomainMessage> {
     .map { TaskId(it) }
 }
 
-fun String.toIntResult() : Result<Int, Throwable> =
+fun String.toIntResult(): Result<Int, Throwable> =
   runCatching {
     this.toInt()
   }
-fun ApplicationCall.getMobileOfAuthenticatedUser() : MobileNumber {
+
+fun ApplicationCall.getMobileOfAuthenticatedUser(): MobileNumber {
   val principal = principal<JWTPrincipal>()
   val email = principal!!.payload.getClaim(CLAIM_MOBILE).asString()
   return MobileNumber(email)
 }
+
 val log = InlineLogger()
 suspend fun ApplicationCall.respondDomainMessage(domainMessage: DomainMessage) {
   log.debug { "Responding with Error: $domainMessage" }
-  when(domainMessage) {
-    DatabaseError ->  respond(HttpStatusCode.InternalServerError,domainMessage.message)
+  when (domainMessage) {
+    DatabaseError -> respond(HttpStatusCode.InternalServerError, domainMessage.message)
     DuplicateFile -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     DuplicateUser -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     InvalidRequest -> respond(HttpStatusCode.BadRequest, domainMessage.message)

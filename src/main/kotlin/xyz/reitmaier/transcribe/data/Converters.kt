@@ -7,8 +7,6 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import xyz.reitmaier.transcribe.plugins.timestampFormat
-import java.text.SimpleDateFormat
 
 // UserId
 
@@ -35,6 +33,42 @@ object TranscriptIdSerializer : KSerializer<TranscriptId> {
 
   override fun deserialize(decoder: Decoder): TranscriptId {
     return TranscriptId(decoder.decodeInt())
+  }
+}
+object AssignmentStrategySerializer : KSerializer<AssignmentStrategy> {
+  override val descriptor: SerialDescriptor
+    get() = PrimitiveSerialDescriptor("data.AssignmentStrategy", PrimitiveKind.INT)
+
+  override fun serialize(encoder: Encoder, value: AssignmentStrategy) {
+    encoder.encodeInt(value.value)
+  }
+
+  override fun deserialize(decoder: Decoder): AssignmentStrategy {
+    return AssignmentStrategy(decoder.decodeInt())
+  }
+}
+object AssignmentIdSerializer : KSerializer<AssignmentId> {
+  override val descriptor: SerialDescriptor
+    get() = PrimitiveSerialDescriptor("data.AssignmentId", PrimitiveKind.INT)
+
+  override fun serialize(encoder: Encoder, value: AssignmentId) {
+    encoder.encodeInt(value.value)
+  }
+
+  override fun deserialize(decoder: Decoder): AssignmentId {
+    return AssignmentId(decoder.decodeInt())
+  }
+}
+object RequestIdSerializer : KSerializer<RequestId> {
+  override val descriptor: SerialDescriptor
+    get() = PrimitiveSerialDescriptor("data.RequestId", PrimitiveKind.INT)
+
+  override fun serialize(encoder: Encoder, value: RequestId) {
+    encoder.encodeInt(value.value)
+  }
+
+  override fun deserialize(decoder: Decoder): RequestId {
+    return RequestId(decoder.decodeInt())
   }
 }
 

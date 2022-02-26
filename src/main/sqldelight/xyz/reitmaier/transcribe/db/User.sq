@@ -1,6 +1,9 @@
 addUser:
 INSERT INTO user(password, mobile_number, mobile_operator, name, created_at) VALUES (?,?, ? ,?, ?);
 
+allUsers:
+SELECT * FROM user WHERE is_admin = 0;
+
 findUserByMobile:
 SELECT * FROM user WHERE mobile_number = ? LIMIT 1;
 
