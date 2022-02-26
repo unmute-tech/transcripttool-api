@@ -80,6 +80,19 @@ fun Application.configureRouting(
     }
   }
   routing {
+    post("/error") {
+      val errorMessage = call.receiveOrNull<String>().toResultOr { InvalidRequest }
+      errorMessage.fold(
+        success = {
+          log.debug { it }
+          return@post call.respond(HttpStatusCode.OK, it)
+        },
+        failure = {
+          log.error { "Failed to log error" }
+          return@post call.respond(HttpStatusCode.BadRequest)
+        }
+      )
+    }
     static("/") {
       staticRootFolder = File("static")
       file("privacy_policy.html")
@@ -254,10 +267,6 @@ fun Application.configureRouting(
             )
         }
       }
-    }
-    post("/error") {
-      val errorMessage = call.receiveOrNull<String>().toResultOr { InvalidRequest }
-      log.debug { errorMessage }
     }
   }
 }
