@@ -22,22 +22,29 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
       refreshToken
     }.mapError { DatabaseError }
 
+  private fun transcriptExists(newTranscript: NewTranscript, existingTranscripts: List<Transcript>) : Boolean {
+   return existingTranscripts.any { it.region_start == newTranscript.regionStart && it.region_end == newTranscript.regionEnd && it.transcript == newTranscript.transcript }
+  }
+
   fun insertTranscripts(taskId: TaskId, newTranscripts: List<NewTranscript>) : DomainResult<Int> =
     runCatching {
       db.transactionWithResult<Int> {
+        val existingTranscripts = transcripts.transcriptsByTaskId(taskId).executeAsList()
         newTranscripts.forEach { transcript ->
           val timestamp = Clock.System.now()
-          transcripts.addTranscript(
-            task_id = taskId,
-            region_start = transcript.regionStart,
-            region_end = transcript.regionEnd,
-            transcript = transcript.transcript,
-            client_updated_at = transcript.updatedAt,
-            created_at = timestamp,
-            updated_at = timestamp,
-          )
+          if(!transcriptExists(transcript, existingTranscripts)) {
+            transcripts.addTranscript(
+              task_id = taskId,
+              region_start = transcript.regionStart,
+              region_end = transcript.regionEnd,
+              transcript = transcript.transcript,
+              client_updated_at = transcript.updatedAt,
+              created_at = timestamp,
+              updated_at = timestamp,
+            )
+          }
         }
-        newTranscripts.size
+        newTranscripts.size // TODO refactor this
       }
     }.mapError { DatabaseError }
 
