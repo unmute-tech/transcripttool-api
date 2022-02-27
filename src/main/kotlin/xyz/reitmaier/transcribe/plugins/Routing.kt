@@ -93,9 +93,9 @@ fun Application.configureRouting(
         }
       )
     }
-    static("/") {
-      staticRootFolder = File("static")
-      file("privacy_policy.html")
+    static {
+//      defaultResource("index.html", "static")
+      resource("privacy_policy.html", "static/privacy_policy.html")
     }
     authenticate("admin-basic-auth") {
       get("/admin") {
