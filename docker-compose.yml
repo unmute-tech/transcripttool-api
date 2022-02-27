@@ -27,8 +27,9 @@ services:
       - traefik_proxy
       - mariadb-transcribeapi-network
     volumes:
-    - ./data:/app/data
-#    - ./google-credentials.json:/app/google-credentials.json
+    - ./data:/data
+    # - ./static:/static
+    # - ./google-credentials.json:/app/google-credentials.json
     environment:
       - DATABASE_HOST=mariadb-transcribeapi
       - DATABASE_DB=transcribe
@@ -45,7 +46,7 @@ services:
       - "traefik.http.routers.transcribeapi-rtr.middlewares=rate-limit@file"
       ## HTTP Services
       - "traefik.http.routers.transcribeapi-rtr.service=transcribeapi-svc"
-      - "traefik.http.services.transcribeapi-svc.loadbalancer.server.port=8080"
+      - "traefik.http.services.transcribeapi-svc.loadbalancer.server.port=8088"
 
   adminer-transcribeapi:
     image: adminer
