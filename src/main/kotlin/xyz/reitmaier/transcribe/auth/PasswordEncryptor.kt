@@ -8,17 +8,17 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
 class PasswordEncryptor(jwtConfig: JWTConfig) {
-    private val hmacKey: SecretKeySpec = SecretKeySpec(jwtConfig.tokenSecret.toByteArray(), ALGORITHM)
+  private val hmacKey: SecretKeySpec = SecretKeySpec(jwtConfig.tokenSecret.toByteArray(), ALGORITHM)
 
-    /**
-     * Function which encrypts password and return
-     */
-    fun encrypt(password: Password): EncryptedPassword {
-        val hmac = Mac.getInstance(ALGORITHM).apply { init(hmacKey) }
-        return EncryptedPassword(hex(hmac.doFinal(password.value.toByteArray(Charsets.UTF_8))))
-    }
+  /**
+   * Function which encrypts password and return
+   */
+  fun encrypt(password: Password): EncryptedPassword {
+    val hmac = Mac.getInstance(ALGORITHM).apply { init(hmacKey) }
+    return EncryptedPassword(hex(hmac.doFinal(password.value.toByteArray(Charsets.UTF_8))))
+  }
 
-    companion object {
-        const val ALGORITHM = "HmacSHA256"
-    }
+  companion object {
+    const val ALGORITHM = "HmacSHA256"
+  }
 }

@@ -7,11 +7,11 @@ import com.github.michaelbull.result.*
 import com.github.michaelbull.result.coroutines.binding.binding
 import io.ktor.http.*
 import io.ktor.http.content.*
+import io.ktor.server.http.content.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.config.*
-import io.ktor.server.http.content.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -19,7 +19,6 @@ import xyz.reitmaier.transcribe.auth.AuthResponse
 import xyz.reitmaier.transcribe.auth.AuthService
 import xyz.reitmaier.transcribe.auth.CLAIM_MOBILE
 import xyz.reitmaier.transcribe.data.*
-import xyz.reitmaier.transcribe.db.Task
 import java.io.File
 import java.util.*
 
@@ -171,6 +170,8 @@ fun Application.configureRouting(
           val displayName = fileItem.originalFileName ?: return@post call.respondDomainMessage(FileNameMissing)
             .also { fileItem.dispose() }
 
+          val extension = displayName.substringAfterLast(".", "oga")
+
           val formItems = multipartData.filterIsInstance<PartData.FormItem>()
           val length = formItems.firstOrNull { it.name == "length" }?.value?.toLongOrNull()
             ?: return@post call.respondDomainMessage(ContentLengthMissing).also { fileItem.dispose() }
@@ -189,31 +190,29 @@ fun Application.configureRouting(
             }
           }
           fileItem.dispose()
-//          // TODO Remove after testing
-//          val file2 = file.copyTo(File("${file.path}-2"))
-//          repo.insertTask(user.id,displayName,length,file2.path,TaskProvenance.REMOTE)
-//          // TODO Remove until here
+          if (user.is_admin) {
+            log.debug { "Distributing task to other users" }
+            // Distribute Task to all other users
+            repo.insertRequest(user.id, displayName, length, file.path, extension, AssignmentStrategy.ALL)
+          }
           repo.insertTask(user.id, displayName, length, file.path, TaskProvenance.LOCAL).map { task -> task.id }
             .fold(
               success = { call.respond(HttpStatusCode.Created, it.value) },
               failure = { call.respondDomainMessage(it) }
             )
+
         }
 
         get("/{$TASK_ID_PARAMETER}") {
           val mobile = call.getMobileOfAuthenticatedUser()
           binding<TaskDto, DomainMessage> {
             val user = repo.findUserByMobile(mobile).bind()
-            val task = repo.getUserTask(
+            repo.getUserTaskDto(
               taskId = call.parameters.readTaskId().bind(),
               userId = user.id
             ).bind()
-
-            // transcript may or may not exist yet
-            val transcript = repo.getLatestTranscript(task.id).get()?.transcript ?: ""
-            task.toDto(transcript)
           }.fold(
-            success = { n -> call.respond(HttpStatusCode.Created, n) },
+            success = { task -> call.respond(HttpStatusCode.Created, task) },
             failure = { call.respondDomainMessage(it) }
           )
         }
@@ -221,7 +220,7 @@ fun Application.configureRouting(
           val mobile = call.getMobileOfAuthenticatedUser()
           binding<Int, DomainMessage> {
             val user = repo.findUserByMobile(mobile).bind()
-            val task = repo.getUserTask(
+            val task = repo.getUserTaskDto(
               taskId = call.parameters.readTaskId().bind(),
               userId = user.id
             ).bind()
@@ -235,34 +234,46 @@ fun Application.configureRouting(
 
         }
 
-        get("/{$TASK_ID_PARAMETER}/file") {
+        post("/{$TASK_ID_PARAMETER}/reject") {
           val mobile = call.getMobileOfAuthenticatedUser()
-          binding<Pair<File, Task>, DomainMessage> {
+          binding<TaskDto, DomainMessage> {
             val user = repo.findUserByMobile(mobile).bind()
-            val task = repo.getUserTask(
+            val task = repo.getUserTaskDto(
               taskId = call.parameters.readTaskId().bind(),
               userId = user.id
             ).bind()
-            Pair(File(task.path), task)
-          }.andThen { pair ->
-            if (pair.first.exists()) {
-              Ok(pair)
-            } else {
-              Err(FileNotFound)
-            }
+            val rejectReason = call.receiveOrNull<RejectReason>()
+              .toResultOr { InvalidRequest }.bind()
+            repo.rejectTask(task.id, rejectReason).bind()
+          }.fold(
+            success = { task -> call.respond(HttpStatusCode.Accepted, task) },
+            failure = { call.respondDomainMessage(it) }
+          )
+
+        }
+
+        get("/{$TASK_ID_PARAMETER}/file") {
+          val mobile = call.getMobileOfAuthenticatedUser()
+          binding<TaskFileInfo, DomainMessage> {
+            val user = repo.findUserByMobile(mobile).bind()
+            val task = repo.getUserTaskDto(
+              taskId = call.parameters.readTaskId().bind(),
+              userId = user.id
+            ).bind()
+            repo.getTaskFileInfo(task.id, user.id).bind()
           }
             .fold(
               failure = { call.respondDomainMessage(it) },
-              success = { pair ->
+              success = { taskFileInfo ->
                 call.response.header(
                   HttpHeaders.ContentDisposition,
                   ContentDisposition.Attachment.withParameter(
                     ContentDisposition.Parameters.FileName,
-                    pair.second.display_name
+                    taskFileInfo.displayName
                   )
                     .toString()
                 )
-                call.respondFile(pair.first)
+                call.respondFile(taskFileInfo.taskFile)
               },
             )
         }

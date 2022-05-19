@@ -39,8 +39,8 @@ fun Application.configureDB(): TranscribeDb {
     // https://github.com/brettwooldridge/HikariCP/issues/540
     driverClassName = Driver::class.java.name
   }
-  val dataSource : DataSource = HikariDataSource(datasourceConfig)
-  val driver : SqlDriver = dataSource.asJdbcDriver()
+  val dataSource: DataSource = HikariDataSource(datasourceConfig)
+  val driver: SqlDriver = dataSource.asJdbcDriver()
 
 
   val db = TranscribeDb(
@@ -60,6 +60,8 @@ fun Application.configureDB(): TranscribeDb {
       provenanceAdapter = EnumColumnAdapter(),
       created_atAdapter = timestampAdapter,
       updated_atAdapter = timestampAdapter,
+      completed_atAdapter = timestampAdapter,
+      reject_reasonAdapter = EnumColumnAdapter(),
     ),
     transcriptAdapter = Transcript.Adapter(
       idAdapter = transcriptIdAdapter,
@@ -81,7 +83,6 @@ fun Application.configureDB(): TranscribeDb {
       request_idAdapter = requestIdAdapter,
       task_idAdapter = taskIdAdapter,
       assigned_atAdapter = timestampAdapter,
-      completed_atAdapter = timestampAdapter,
     ),
   )
   driver.migrate(db)
@@ -91,6 +92,7 @@ fun Application.configureDB(): TranscribeDb {
   return db
 
 }
+
 private fun SqlDriver.migrate(database: TranscribeDb) {
   // Settings table is version 2
   TranscribeDb.Schema.migrate(this, 1, 2)
@@ -104,6 +106,7 @@ private fun SqlDriver.migrate(database: TranscribeDb) {
     database.settingsQueries.setVersion(version + 1)
   }
 }
+
 val timestampFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
 private val userIdAdapter = object : ColumnAdapter<UserId, Int> {
@@ -164,6 +167,7 @@ private val encryptedPasswordAdapter = object : ColumnAdapter<EncryptedPassword,
 val timestampAdapter = object : ColumnAdapter<Instant, Long> {
   override fun decode(databaseValue: Long) =
     Instant.fromEpochMilliseconds(databaseValue)
+
   override fun encode(value: Instant) = value.toEpochMilliseconds()
 }
 

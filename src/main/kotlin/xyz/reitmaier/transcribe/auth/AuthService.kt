@@ -13,7 +13,7 @@ import java.util.*
 import kotlin.time.Duration.Companion.seconds
 
 // TODO place in (private) companion object
-const val EXPIRES_IN_SECONDS = 120
+const val EXPIRES_IN_SECONDS = 86400
 const val CLAIM_MOBILE = "mobile"
 
 @Serializable
