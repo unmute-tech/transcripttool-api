@@ -17,7 +17,7 @@ plugins {
   id("com.squareup.sqldelight") version "1.5.3"
 
   // Docker
-  id("com.google.cloud.tools.jib") version "3.2.0"
+  id("com.google.cloud.tools.jib") version "3.2.1"
 }
 
 sqldelight {
@@ -35,7 +35,6 @@ application {
 
 repositories {
   mavenCentral()
-  maven { url = uri("https://maven.pkg.jetbrains.space/public/p/ktor/eap") }
 }
 
 // make all when statements exhaustive by default and opt-in to errors instead of warnings
@@ -50,7 +49,6 @@ kotlin {
 
 dependencies {
   // ktor
-  implementation("io.ktor:ktor-server-core:$ktor_version")
   implementation("io.ktor:ktor-server-auth:$ktor_version")
   implementation("io.ktor:ktor-server-auth-jwt:$ktor_version")
   implementation("io.ktor:ktor-server-auto-head-response:$ktor_version")
@@ -58,13 +56,14 @@ dependencies {
   implementation("io.ktor:ktor-server-default-headers:$ktor_version")
   implementation("io.ktor:ktor-server-partial-content:$ktor_version")
   implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version")
-  implementation("io.ktor:ktor-server-netty:$ktor_version")
+  implementation("io.ktor:ktor-server-core-jvm:$ktor_version")
+  implementation("io.ktor:ktor-server-netty-jvm:$ktor_version")
 
   // db -- config
   implementation("com.zaxxer:HikariCP:$hikaricp_version")
 
   // db -- mysql
-  implementation("mysql:mysql-connector-java:8.0.28")
+  implementation("mysql:mysql-connector-java:8.0.29")
 
   // db -- sqldelight
   implementation("com.squareup.sqldelight:runtime-jvm:$sqldelight_version")
@@ -83,12 +82,12 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version")
 
   // Result monad for modelling success/failure operations
-  implementation("com.michael-bull.kotlin-result:kotlin-result:1.1.14")
-  implementation("com.michael-bull.kotlin-result:kotlin-result-coroutines:1.1.14")
+  implementation("com.michael-bull.kotlin-result:kotlin-result:1.1.16")
+  implementation("com.michael-bull.kotlin-result:kotlin-result-coroutines:1.1.16")
 
   // testing
-  testImplementation("io.ktor:ktor-server-tests:$ktor_version")
   testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
+  testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
 }
 
 jib {
