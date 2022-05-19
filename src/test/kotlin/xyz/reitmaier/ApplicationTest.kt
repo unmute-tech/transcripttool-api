@@ -20,7 +20,7 @@ import java.io.File
 import kotlin.time.Duration.Companion.seconds
 
 class ApplicationTest {
-  private val file = File("PTT-20210804-WA0002.opus")
+  private val file = File("beep.opus")
   private val fileContent = file.readBytes()
   @Test
   fun testRoot() = testApplication {
