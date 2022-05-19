@@ -1,3 +1,3 @@
 #!/usr/bin/env sh
 
-ssh thomas@home docker logs -f transcribeapi
+ssh thomas@speechbox.reitmaier.xyz docker logs -f transcribeapi
