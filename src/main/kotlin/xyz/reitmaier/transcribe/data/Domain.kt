@@ -6,6 +6,7 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import xyz.reitmaier.transcribe.db.Hydrated_task
 import xyz.reitmaier.transcribe.db.Task
+import java.io.File
 import java.util.UUID
 
 /*
@@ -67,11 +68,15 @@ data class TaskDto(
   val lengthMs: Long,
   val provenance: TaskProvenance,
   val transcript: String,
+  val rejectReason: RejectReason?,
 
   @Serializable(with = InstantEpochSerializer::class)
   val created_at: Instant,
   @Serializable(with = InstantEpochSerializer::class)
   val updated_at: Instant,
+
+  @Serializable(with = InstantEpochSerializer::class)
+  val completed_at: Instant?,
 )
 fun Hydrated_task.toDto() =
   TaskDto(
@@ -81,7 +86,9 @@ fun Hydrated_task.toDto() =
     provenance = provenance,
     transcript = transcript ?: "",
     created_at = created_at,
-    updated_at = updated_at
+    updated_at = updated_at,
+    completed_at = completed_at,
+    rejectReason = reject_reason,
   )
 fun Task.toDto(transcript: String) : TaskDto =
   TaskDto(
@@ -91,8 +98,15 @@ fun Task.toDto(transcript: String) : TaskDto =
     provenance = provenance,
     transcript = transcript,
     created_at = created_at,
-    updated_at = updated_at
+    updated_at = updated_at,
+    completed_at = completed_at,
+    rejectReason = reject_reason,
   )
+
+class TaskFileInfo(
+  val taskFile: File,
+  val displayName: String,
+)
 
 @Serializable
 data class LoginRequest(val mobile: MobileNumber, val password: Password) {
@@ -132,7 +146,8 @@ value class AssignmentId(val value: Int) {
 @JvmInline
 value class AssignmentStrategy(val value: Int) {
   companion object {
-    val TEST = AssignmentStrategy(1)
+    val TEST = AssignmentStrategy(-3)
+    val OWNER = AssignmentStrategy(-1)
     val ALL = AssignmentStrategy(0)
   }
 }
@@ -209,6 +224,13 @@ value class MobileNumber(val value: String) {
 enum class TaskProvenance(val provenance: String) {
   LOCAL("LOCAL"),
   REMOTE("REMOTE")
+}
+
+@Serializable
+enum class RejectReason(val value: String) {
+  BLANK("BLANK"),
+  INAPPROPRIATE("INAPPROPRIATE"),
+  UNDERAGE("UNDERAGE"),
 }
 
 typealias DomainResult<T> = Result<T, DomainMessage>

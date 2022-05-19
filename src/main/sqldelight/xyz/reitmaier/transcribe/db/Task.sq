@@ -9,8 +9,13 @@ hydratedUserTasks:
 SELECT * FROM hydrated_task WHERE user_id = ? ORDER BY updated_at DESC;
 
 selectTaskById:
-SELECT * FROM task WHERE id = ? LIMIT 1;
+SELECT * FROM hydrated_task WHERE id = ? LIMIT 1;
 
 selectTaskByIdAndUserId:
-SELECT * FROM task WHERE user_id = ? AND id = ? LIMIT 1;
+SELECT * FROM hydrated_task WHERE user_id = ? AND id = ? LIMIT 1;
 
+completeTask:
+UPDATE task SET completed_at = :completed_at WHERE id = ?;
+
+rejectTask:
+UPDATE task SET reject_reason = :reject_reason, completed_at = :completed_at WHERE id = ?;

@@ -16,14 +16,12 @@ CREATE TABLE IF NOT EXISTS request
     assignment_strategy INT AS AssignmentStrategy NOT NULL,
     created_at BIGINT AS Instant NOT NULL,
     updated_at BIGINT AS Instant NOT NULL,
-    completed_at BIGINT AS Instant,
---     fcm_token  TEXT AS FcmToken
-    CONSTRAINT path_unique UNIQUE (path)
+    completed_at BIGINT AS Instant
 );
 
 CREATE TABLE IF NOT EXISTS assignment(
     id INT AS AssignmentId NOT NULL PRIMARY KEY AUTO_INCREMENT,
-    request_id INT AS RequestId NOT NULL REFERENCES assignment(id),
+    request_id INT AS RequestId NOT NULL REFERENCES request(id),
     task_id INT AS TaskId NOT NULL REFERENCES task(id),
     assigned_at BIGINT AS Instant NOT NULL,
     completed_at BIGINT AS Instant

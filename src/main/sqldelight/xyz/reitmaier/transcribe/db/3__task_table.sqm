@@ -13,9 +13,9 @@ CREATE TABLE IF NOT EXISTS task
     provenance VARCHAR(255) AS TaskProvenance NOT NULL,
     display_name VARCHAR(255) NOT NULL, -- Necessary?
     created_at BIGINT AS Instant NOT NULL,
-    updated_at BIGINT AS Instant NOT NULL,
+    updated_at BIGINT AS Instant NOT NULL
 --     fcm_token  TEXT AS FcmToken
-    CONSTRAINT path_unique UNIQUE (path)
+--     CONSTRAINT path_unique UNIQUE (path)
 );
 
 -- CREATE TABLE IF NOT EXISTS Task_Entity

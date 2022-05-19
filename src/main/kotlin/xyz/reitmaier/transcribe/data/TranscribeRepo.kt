@@ -7,6 +7,7 @@ import com.github.michaelbull.result.*
 import kotlinx.datetime.Clock
 import xyz.reitmaier.transcribe.auth.PasswordEncryptor
 import xyz.reitmaier.transcribe.db.*
+import java.io.File
 
 class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor: PasswordEncryptor) {
   private val log = InlineLogger()
@@ -23,7 +24,7 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
     }.mapError { DatabaseError }
 
   private fun transcriptExists(newTranscript: NewTranscript, existingTranscripts: List<Transcript>) : Boolean {
-   return existingTranscripts.any { it.region_start == newTranscript.regionStart && it.region_end == newTranscript.regionEnd && it.transcript == newTranscript.transcript }
+    return existingTranscripts.any { it.region_start == newTranscript.regionStart && it.region_end == newTranscript.regionEnd && it.transcript == newTranscript.transcript }
   }
 
   fun insertTranscripts(taskId: TaskId, newTranscripts: List<NewTranscript>) : DomainResult<Int> =
@@ -63,22 +64,25 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
 //      transcripts.selectTranscript(transcriptId).executeAsOne()
 //    }.mapError { DatabaseError }
 
-  fun insertTask(userId: UserId, displayName: String, length: Long, path: String, provenance: TaskProvenance, ) : DomainResult<Task> =
-    runCatching { db.transactionWithResult<Task> {
+  fun insertTask(userId: UserId, displayName: String, length: Long, path: String, provenance: TaskProvenance, ) : DomainResult<Hydrated_task> =
+    runCatching { db.transactionWithResult<Hydrated_task> {
       val timestamp = Clock.System.now()
+      requests.addRequest(userId,path,displayName.substringAfterLast(".", "audio"),length, AssignmentStrategy.OWNER,timestamp,timestamp)
+      val requestId = RequestId(lastId())
       tasks.addTask(
         user_id = userId,
-          display_name = displayName,
-          length = length,
-          path = path,
-          provenance = provenance,
-          created_at = timestamp,
-          updated_at = timestamp,
-        )
-        val taskId = TaskId(lastId())
-        tasks.selectTaskById(taskId).executeAsOne()
-      }
-    }.mapError { DuplicateFile }
+        display_name = displayName,
+        length = length,
+        path = path,
+        provenance = provenance,
+        created_at = timestamp,
+        updated_at = timestamp,
+      )
+      val taskId = TaskId(lastId())
+      requests.assignRequestToTask(requestId,taskId,timestamp)
+      tasks.selectTaskById(taskId).executeAsOne()
+    }
+    }.mapError { DatabaseError }
 
   fun insertRequest(userId: UserId, displayName: String, length: Long, path: String, extension: String, assignmentStrategy: AssignmentStrategy, ) : DomainResult<Request> =
     runCatching {
@@ -99,15 +103,16 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
         // TODO Handle other Assignment Strategies
         if(assignmentStrategy == AssignmentStrategy.ALL) {
           // TODO generate sensible displayName
-          users.forEach {  user ->
+          // For every user other than the requester
+          users.filter { it.id != userId }.forEach {  user ->
             // TODO Length
             // TODO display Name
             tasks.addTask(
               user_id = user.id,
               path = path,
-              length = 0L,
+              length = length,
               provenance = TaskProvenance.REMOTE,
-              display_name = path,
+              display_name = displayName,
               updated_at = timestamp,
               created_at = timestamp
             )
@@ -121,7 +126,7 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
         }
         request
       }
-    }.mapError { DuplicateFile }
+    }.mapError { DatabaseError }
 
   fun insertUser(name: Name, mobile: MobileNumber, password: Password, operator: MobileOperator) : DomainResult<User> = runCatching {
     val encryptedPassword = passwordEncryptor.encrypt(password)
@@ -145,7 +150,21 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
     users.findUserByMobile(mobile).executeAsOne()
   }.mapError { UserNotFound }
 
-  fun getUserTask(taskId: TaskId, userId: UserId) : DomainResult<Task> =
+  fun getUserTaskDto(taskId: TaskId, userId: UserId) : DomainResult<TaskDto> =
+    getUserTask(taskId,userId).map { it.toDto() }
+
+  fun getTaskFileInfo(taskId: TaskId, userId: UserId) : DomainResult<TaskFileInfo> =
+    getUserTask(taskId, userId)
+      .andThen { task ->
+        val file = File(task.path)
+        if (file.exists()) {
+          return Ok(TaskFileInfo(file, task.display_name))
+        } else {
+          Err(FileNotFound)
+        }
+      }
+
+  private fun getUserTask(taskId: TaskId, userId: UserId) : DomainResult<Hydrated_task> =
     tasks.selectTaskByIdAndUserId(userId, taskId).executeAsOneOrNull().toResultOr { TaskNotFound }
 
   fun getHydratedUserTasks(userId: UserId) : DomainResult<List<TaskDto>> =
@@ -165,5 +184,13 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
   }.mapError { MobileOrPasswordIncorrect }
 
   private fun lastId() : Int = settings.lastInsertedIdAsLong().executeAsOne().toInt()
+  fun rejectTask(taskId: TaskId, rejectReason: RejectReason): DomainResult<TaskDto> =
+    runCatching {
+      tasks.transactionWithResult<Hydrated_task> {
+        tasks.rejectTask(rejectReason, Clock.System.now(), taskId)
+        tasks.selectTaskById(taskId).executeAsOne()
+      }
+    }.mapError { DatabaseError }
+      .map { it.toDto() }
 }
 
