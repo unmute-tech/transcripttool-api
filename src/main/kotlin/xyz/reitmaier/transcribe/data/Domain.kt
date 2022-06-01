@@ -90,18 +90,6 @@ fun Hydrated_task.toDto() =
     completed_at = completed_at,
     rejectReason = reject_reason,
   )
-fun Task.toDto(transcript: String) : TaskDto =
-  TaskDto(
-    id = id,
-    displayName = display_name,
-    lengthMs = length,
-    provenance = provenance,
-    transcript = transcript,
-    created_at = created_at,
-    updated_at = updated_at,
-    completed_at = completed_at,
-    rejectReason = reject_reason,
-  )
 
 class TaskFileInfo(
   val taskFile: File,
@@ -231,6 +219,24 @@ enum class RejectReason(val value: String) {
   BLANK("BLANK"),
   INAPPROPRIATE("INAPPROPRIATE"),
   UNDERAGE("UNDERAGE"),
+}
+
+@Serializable
+data class CompleteTaskRequest(
+  val confidence: Confidence?,
+  val difficulty: Difficulty?,
+  val completed_at: Instant
+)
+enum class Difficulty {
+  EASY,
+  MEDIUM,
+  HARD,
+}
+
+enum class Confidence {
+  LOW,
+  MEDIUM,
+  HIGH,
 }
 
 typealias DomainResult<T> = Result<T, DomainMessage>

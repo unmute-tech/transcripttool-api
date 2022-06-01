@@ -31,21 +31,27 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
     runCatching {
       db.transactionWithResult<Int> {
         val existingTranscripts = transcripts.transcriptsByTaskId(taskId).executeAsList()
-        newTranscripts.forEach { transcript ->
-          val timestamp = Clock.System.now()
-          if(!transcriptExists(transcript, existingTranscripts)) {
+        val count =
+          newTranscripts
+          .filter { !transcriptExists(it, existingTranscripts) } // ignore existing Transcripts
+          .map {
+            val timestamp = Clock.System.now()
             transcripts.addTranscript(
               task_id = taskId,
-              region_start = transcript.regionStart,
-              region_end = transcript.regionEnd,
-              transcript = transcript.transcript,
-              client_updated_at = transcript.updatedAt,
+              region_start = it.regionStart,
+              region_end = it.regionEnd,
+              transcript = it.transcript,
+              client_updated_at = it.updatedAt,
               created_at = timestamp,
               updated_at = timestamp,
             )
           }
+          .count()
+        if(count > 0) {
+          // Set Task updated at time
+          db.taskQueries.updateTaskTimestamp(Clock.System.now(), taskId)
         }
-        newTranscripts.size // TODO refactor this
+        count
       }
     }.mapError { DatabaseError }
 
@@ -184,13 +190,16 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
   }.mapError { MobileOrPasswordIncorrect }
 
   private fun lastId() : Int = settings.lastInsertedIdAsLong().executeAsOne().toInt()
-  fun rejectTask(taskId: TaskId, rejectReason: RejectReason): DomainResult<TaskDto> =
+  fun rejectTask(taskId: TaskId, rejectReason: RejectReason): DomainResult<Unit> =
     runCatching {
-      tasks.transactionWithResult<Hydrated_task> {
-        tasks.rejectTask(rejectReason, Clock.System.now(), taskId)
-        tasks.selectTaskById(taskId).executeAsOne()
-      }
+      val timestamp = Clock.System.now()
+      tasks.rejectTask(rejectReason, timestamp, timestamp, taskId)
     }.mapError { DatabaseError }
-      .map { it.toDto() }
+
+  fun completeTask(taskId: TaskId, completeTaskRequest: CompleteTaskRequest): DomainResult<Unit> =
+    runCatching {
+      val timestamp = Clock.System.now()
+      tasks.completeTask(completeTaskRequest.confidence, completeTaskRequest.difficulty, timestamp, timestamp, taskId)
+    }.mapError { DatabaseError }
 }
 

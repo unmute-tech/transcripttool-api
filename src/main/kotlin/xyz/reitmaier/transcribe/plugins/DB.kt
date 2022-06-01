@@ -62,6 +62,8 @@ fun Application.configureDB(): TranscribeDb {
       updated_atAdapter = timestampAdapter,
       completed_atAdapter = timestampAdapter,
       reject_reasonAdapter = EnumColumnAdapter(),
+      confidenceAdapter = EnumColumnAdapter(),
+      difficultyAdapter = EnumColumnAdapter(),
     ),
     transcriptAdapter = Transcript.Adapter(
       idAdapter = transcriptIdAdapter,

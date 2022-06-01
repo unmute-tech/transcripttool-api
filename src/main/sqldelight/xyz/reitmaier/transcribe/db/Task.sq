@@ -15,7 +15,10 @@ selectTaskByIdAndUserId:
 SELECT * FROM hydrated_task WHERE user_id = ? AND id = ? LIMIT 1;
 
 completeTask:
-UPDATE task SET completed_at = :completed_at WHERE id = ?;
+UPDATE task SET confidence = :confidence, difficulty = :difficulty, completed_at = :completed_at, updated_at = :updated_at  WHERE id = ?;
+
+updateTaskTimestamp:
+UPDATE task SET updated_at = :updated_at WHERE id = ?;
 
 rejectTask:
-UPDATE task SET reject_reason = :reject_reason, completed_at = :completed_at WHERE id = ?;
+UPDATE task SET reject_reason = :reject_reason, completed_at = :completed_at, updated_at = :updated_at WHERE id = ?;

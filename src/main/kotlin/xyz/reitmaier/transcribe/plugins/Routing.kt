@@ -216,7 +216,7 @@ fun Application.configureRouting(
             failure = { call.respondDomainMessage(it) }
           )
         }
-        post("/{$TASK_ID_PARAMETER}/transcript") {
+        post("/{$TASK_ID_PARAMETER}/transcripts") {
           val mobile = call.getMobileOfAuthenticatedUser()
           binding<Int, DomainMessage> {
             val user = repo.findUserByMobile(mobile).bind()
@@ -231,12 +231,28 @@ fun Application.configureRouting(
             success = { n -> call.respond(HttpStatusCode.Created, n) },
             failure = { call.respondDomainMessage(it) }
           )
+        }
 
+        post("/{$TASK_ID_PARAMETER}/complete") {
+          val mobile = call.getMobileOfAuthenticatedUser()
+          binding<Unit, DomainMessage> {
+            val user = repo.findUserByMobile(mobile).bind()
+            val task = repo.getUserTaskDto(
+              taskId = call.parameters.readTaskId().bind(),
+              userId = user.id
+            ).bind()
+            val completeTaskRequest = call.receiveOrNull<CompleteTaskRequest>()
+              .toResultOr { InvalidRequest }.bind()
+            repo.completeTask(task.id, completeTaskRequest).bind()
+          }.fold(
+            success = { call.respond(HttpStatusCode.OK) },
+            failure = { call.respondDomainMessage(it) }
+          )
         }
 
         post("/{$TASK_ID_PARAMETER}/reject") {
           val mobile = call.getMobileOfAuthenticatedUser()
-          binding<TaskDto, DomainMessage> {
+          binding<Unit, DomainMessage> {
             val user = repo.findUserByMobile(mobile).bind()
             val task = repo.getUserTaskDto(
               taskId = call.parameters.readTaskId().bind(),
@@ -246,7 +262,7 @@ fun Application.configureRouting(
               .toResultOr { InvalidRequest }.bind()
             repo.rejectTask(task.id, rejectReason).bind()
           }.fold(
-            success = { task -> call.respond(HttpStatusCode.Accepted, task) },
+            success = { call.respond(HttpStatusCode.OK) },
             failure = { call.respondDomainMessage(it) }
           )
 
