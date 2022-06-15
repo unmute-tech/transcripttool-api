@@ -223,7 +223,6 @@ enum class RejectReason(val value: String) {
 
 @Serializable
 data class CompleteTaskRequest(
-  val confidence: Confidence?,
   val difficulty: Difficulty?,
   val completed_at: Instant
 )

@@ -199,7 +199,7 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
   fun completeTask(taskId: TaskId, completeTaskRequest: CompleteTaskRequest): DomainResult<Unit> =
     runCatching {
       val timestamp = Clock.System.now()
-      tasks.completeTask(completeTaskRequest.confidence, completeTaskRequest.difficulty, timestamp, timestamp, taskId)
+      tasks.completeTask(completeTaskRequest.difficulty, timestamp, timestamp, taskId)
     }.mapError { DatabaseError }
 }
 

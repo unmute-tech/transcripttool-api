@@ -15,7 +15,7 @@ selectTaskByIdAndUserId:
 SELECT * FROM hydrated_task WHERE user_id = ? AND id = ? LIMIT 1;
 
 completeTask:
-UPDATE task SET confidence = :confidence, difficulty = :difficulty, completed_at = :completed_at, updated_at = :updated_at  WHERE id = ?;
+UPDATE task SET difficulty = :difficulty, completed_at = :completed_at, updated_at = :updated_at  WHERE id = ?;
 
 updateTaskTimestamp:
 UPDATE task SET updated_at = :updated_at WHERE id = ?;
