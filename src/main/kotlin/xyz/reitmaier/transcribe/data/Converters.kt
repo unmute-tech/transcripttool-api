@@ -23,6 +23,18 @@ object UserIdSerializer : KSerializer<UserId> {
   }
 }
 
+object DeploymentIdSerializer : KSerializer<DeploymentId> {
+  override val descriptor: SerialDescriptor
+    get() = PrimitiveSerialDescriptor("data.DeploymentId", PrimitiveKind.INT)
+
+  override fun serialize(encoder: Encoder, value: DeploymentId) {
+    encoder.encodeInt(value.value)
+  }
+
+  override fun deserialize(decoder: Decoder): DeploymentId {
+    return DeploymentId(decoder.decodeInt())
+  }
+}
 object TranscriptIdSerializer : KSerializer<TranscriptId> {
   override val descriptor: SerialDescriptor
     get() = PrimitiveSerialDescriptor("data.TranscriptId", PrimitiveKind.INT)

@@ -1,0 +1,5 @@
+allDeployments:
+SELECT * FROM deployment ORDER BY started_at DESC;
+
+getDeploymentsers:
+SELECT * FROM user WHERE id IN (SELECT user_id FROM deployment_transcriber WHERE deployment_id = ?);

@@ -75,7 +75,7 @@ fun Application.configureDB(): TranscribeDb {
     requestAdapter = Request.Adapter(
       idAdapter = requestIdAdapter,
       user_idAdapter = userIdAdapter,
-      assignment_strategyAdapter = assingmentStrategyAdapter,
+      assignment_strategyAdapter = assignmentStrategyAdapter,
       created_atAdapter = timestampAdapter,
       updated_atAdapter = timestampAdapter,
       completed_atAdapter = timestampAdapter,
@@ -86,6 +86,17 @@ fun Application.configureDB(): TranscribeDb {
       task_idAdapter = taskIdAdapter,
       assigned_atAdapter = timestampAdapter,
     ),
+    deploymentAdapter = Deployment.Adapter(
+      idAdapter = deploymentIdAdapter,
+      started_atAdapter = timestampAdapter,
+      completed_atAdapter = timestampAdapter,
+    ),
+    deployment_transcriberAdapter = Deployment_transcriber.Adapter(
+      deployment_idAdapter = deploymentIdAdapter,
+      user_idAdapter = userIdAdapter,
+      joined_atAdapter = timestampAdapter,
+      finished_atAdapter = timestampAdapter,
+    )
   )
   driver.migrate(db)
 
@@ -126,7 +137,12 @@ private val transcriptIdAdapter = object : ColumnAdapter<TranscriptId, Int> {
   override fun encode(value: TranscriptId): Int = value.value
 }
 
-private val assingmentStrategyAdapter = object : ColumnAdapter<AssignmentStrategy, Int> {
+private val deploymentIdAdapter = object : ColumnAdapter<DeploymentId, Int> {
+  override fun decode(databaseValue: Int): DeploymentId = DeploymentId(databaseValue)
+  override fun encode(value: DeploymentId): Int = value.value
+}
+
+private val assignmentStrategyAdapter = object : ColumnAdapter<AssignmentStrategy, Int> {
   override fun decode(databaseValue: Int): AssignmentStrategy = AssignmentStrategy(databaseValue)
   override fun encode(value: AssignmentStrategy): Int = value.value
 }

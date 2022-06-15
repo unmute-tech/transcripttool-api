@@ -156,6 +156,14 @@ value class TranscriptId(val value: Int) {
   }
 }
 
+@Serializable(with = DeploymentIdSerializer::class)
+@JvmInline
+value class DeploymentId(val value: Int) {
+  companion object {
+    val TEST = DeploymentId(1)
+  }
+}
+
 @Serializable(with = PasswordSerializer::class)
 @JvmInline
 value class Password(val value: String) {
