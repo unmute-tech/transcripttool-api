@@ -1,6 +1,6 @@
 package xyz.reitmaier.transcribe.auth
 
-import io.ktor.util.*
+import io.ktor.util.hex
 import xyz.reitmaier.transcribe.data.EncryptedPassword
 import xyz.reitmaier.transcribe.data.Password
 import xyz.reitmaier.transcribe.plugins.JWTConfig

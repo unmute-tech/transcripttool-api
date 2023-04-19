@@ -6,9 +6,8 @@ import io.ktor.plugin.features.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val main_class by extra("io.ktor.server.netty.EngineMain")
-val docker_image = "transcriptapi:0.0.1"
 
-@Suppress("DSL_SCOPE_VIOLATION") plugins {
+plugins {
   application
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.serialization)

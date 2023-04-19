@@ -1,6 +1,6 @@
 package xyz.reitmaier.transcribe.data
 
-import kotlinx.datetime.*
+import kotlinx.datetime.Instant
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor

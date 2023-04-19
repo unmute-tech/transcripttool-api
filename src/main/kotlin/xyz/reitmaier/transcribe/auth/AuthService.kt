@@ -4,12 +4,18 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.map
-import kotlinx.datetime.*
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.Serializable
-import xyz.reitmaier.transcribe.data.*
+import xyz.reitmaier.transcribe.data.AccessToken
+import xyz.reitmaier.transcribe.data.DomainResult
+import xyz.reitmaier.transcribe.data.InstantEpochSerializer
+import xyz.reitmaier.transcribe.data.RefreshToken
+import xyz.reitmaier.transcribe.data.TranscribeRepo
 import xyz.reitmaier.transcribe.db.User
 import xyz.reitmaier.transcribe.plugins.JWTConfig
-import java.util.*
+import java.util.Date
 import kotlin.time.Duration.Companion.seconds
 
 // TODO place in (private) companion object

@@ -1,28 +1,42 @@
 package xyz.reitmaier.transcribe.plugins
 
+import com.github.michaelbull.result.Result
+import com.github.michaelbull.result.andThen
+import com.github.michaelbull.result.map
+import com.github.michaelbull.result.mapError
+import com.github.michaelbull.result.runCatching
+import com.github.michaelbull.result.toResultOr
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.github.michaelbull.logging.InlineLogger
-import com.github.michaelbull.result.*
 import com.github.michaelbull.result.coroutines.binding.binding
-import io.ktor.http.*
-import io.ktor.http.content.*
-import io.ktor.server.http.content.*
+import com.github.michaelbull.result.fold
+import com.github.michaelbull.result.get
+import io.ktor.http.ContentDisposition
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.Parameters
+import io.ktor.http.content.PartData
+import io.ktor.http.content.readAllParts
+import io.ktor.http.content.streamProvider
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
-import io.ktor.server.auth.jwt.*
-import io.ktor.server.config.*
+import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.auth.jwt.jwt
+import io.ktor.server.config.ApplicationConfig
 import io.ktor.server.html.*
+import io.ktor.server.http.content.resource
+import io.ktor.server.http.content.static
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import xyz.reitmaier.transcribe.auth.AuthService
 import xyz.reitmaier.transcribe.auth.CLAIM_MOBILE
-import xyz.reitmaier.transcribe.data.*
 import xyz.reitmaier.transcribe.templates.Layout
 import xyz.reitmaier.transcribe.templates.StatusViewTemplate
 import java.io.File
 import java.util.*
+import xyz.reitmaier.transcribe.data.*
 
 data class JWTConfig(
   val audience: String,

@@ -1,11 +1,10 @@
 package xyz.reitmaier.transcribe.data
 
-import com.github.michaelbull.result.*
-import kotlinx.datetime.Clock
+import com.github.michaelbull.result.Result
 import kotlinx.datetime.Instant
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import xyz.reitmaier.transcribe.db.Hydrated_task
-import xyz.reitmaier.transcribe.db.Task
 import java.io.File
 import java.util.UUID
 
@@ -33,34 +32,7 @@ data class NewTranscript(
   @Serializable(with = InstantEpochSerializer::class)
   val updatedAt: Instant,
 )
-{
-  companion object {
-    val TEST = NewTranscript("Test Transcript", 0, 5, Clock.System.now())
-    val TEST1 = NewTranscript("Test Transcript continued", 5, 10, Clock.System.now())
-    val TEST2 = NewTranscript("Test Transcript continued further", 10, 15, Clock.System.now())
-    val TESTS = listOf(TEST, TEST1, TEST2)
-  }
-}
 
-
-@Serializable
-data class TaskRequest(
-  val displayName: String,
-  val lengthMs: Long,
-) {
-  companion object {
-    val TEST = TaskRequest("DISPLAY NAME", 60*1000L)
-  }
-}
-
-//public val id: TaskId,
-//public val user_id: UserId,
-//public val path: String,
-//public val length: Long,
-//public val provenance: TaskProvenance,
-//public val display_name: String,
-//public val created_at: LocalDateTime,
-//public val updated_at: LocalDateTime
 @Serializable
 data class TaskDto(
   val id: TaskId,
@@ -71,12 +43,16 @@ data class TaskDto(
   val rejectReason: RejectReason?,
 
   @Serializable(with = InstantEpochSerializer::class)
-  val created_at: Instant,
-  @Serializable(with = InstantEpochSerializer::class)
-  val updated_at: Instant,
+  @SerialName("created_at")
+  val createdAt: Instant,
 
   @Serializable(with = InstantEpochSerializer::class)
-  val completed_at: Instant?,
+  @SerialName("updated_at")
+  val updatedAt: Instant,
+
+  @Serializable(with = InstantEpochSerializer::class)
+  @SerialName("completed_at")
+  val completedAt: Instant?,
 )
 fun Hydrated_task.toDto() =
   TaskDto(
@@ -85,9 +61,9 @@ fun Hydrated_task.toDto() =
     lengthMs = length,
     provenance = provenance,
     transcript = transcript ?: "",
-    created_at = created_at,
-    updated_at = updated_at,
-    completed_at = completed_at,
+    createdAt = created_at,
+    updatedAt = updated_at,
+    completedAt = completed_at,
     rejectReason = reject_reason,
   )
 
@@ -108,33 +84,20 @@ INLINES
 
 @Serializable(with = TaskIdSerializer::class)
 @JvmInline
-value class TaskId(val value: Int) {
-  companion object {
-    val TEST = TaskId(1)
-  }
-}
+value class TaskId(val value: Int)
 
 @Serializable(with = RequestIdSerializer::class)
 @JvmInline
-value class RequestId(val value: Int) {
-  companion object {
-    val TEST = RequestId(1)
-  }
-}
+value class RequestId(val value: Int)
 
 @Serializable(with = AssignmentIdSerializer::class)
 @JvmInline
-value class AssignmentId(val value: Int) {
-  companion object {
-    val TEST = AssignmentId(1)
-  }
-}
+value class AssignmentId(val value: Int)
 
 @Serializable(with = AssignmentStrategySerializer::class)
 @JvmInline
 value class AssignmentStrategy(val value: Int) {
   companion object {
-    val TEST = AssignmentStrategy(-3)
     val OWNER = AssignmentStrategy(-1)
     val ALL = AssignmentStrategy(0)
   }
@@ -142,27 +105,15 @@ value class AssignmentStrategy(val value: Int) {
 
 @Serializable(with = UserIdSerializer::class)
 @JvmInline
-value class UserId(val value: Int) {
-  companion object {
-    val TEST = UserId(1)
-  }
-}
+value class UserId(val value: Int)
 
 @Serializable(with = TranscriptIdSerializer::class)
 @JvmInline
-value class TranscriptId(val value: Int) {
-  companion object {
-    val TEST = TranscriptId(1)
-  }
-}
+value class TranscriptId(val value: Int)
 
 @Serializable(with = DeploymentIdSerializer::class)
 @JvmInline
-value class DeploymentId(val value: Int) {
-  companion object {
-    val TEST = DeploymentId(1)
-  }
-}
+value class DeploymentId(val value: Int)
 
 @Serializable(with = PasswordSerializer::class)
 @JvmInline
@@ -185,24 +136,19 @@ value class Name(val value: String) {
 value class RefreshToken(val value: String) {
   companion object {
     fun create() : RefreshToken = RefreshToken(UUID.randomUUID().toString())
-    val TEST = RefreshToken("REFRESH TOKEN")
   }
 }
 
 @Serializable(with = AccessTokenSerializer::class)
 @JvmInline
-value class AccessToken(val value: String) {
-  companion object {
-    val TEST = AccessToken("ACCESS TOKEN")
-  }
-}
+value class AccessToken(val value: String)
 
 
 @Serializable(with = MobileOperatorSerializer::class)
 @JvmInline
 value class MobileOperator(val value: String) {
   companion object {
-    val TEST = MobileOperator("MOBILE OPERATOR")
+    val TEST = MobileOperator("NETWORK")
   }
 }
 
@@ -222,6 +168,7 @@ enum class TaskProvenance(val provenance: String) {
   REMOTE("REMOTE")
 }
 
+@Suppress("unused")
 @Serializable
 enum class RejectReason(val value: String) {
   BLANK("BLANK"),
@@ -232,14 +179,19 @@ enum class RejectReason(val value: String) {
 @Serializable
 data class CompleteTaskRequest(
   val difficulty: Difficulty?,
-  val completed_at: Instant
+
+  @SerialName("completed_at")
+  val completedAt: Instant
 )
+
+@Suppress("unused")
 enum class Difficulty {
   EASY,
   MEDIUM,
   HARD,
 }
 
+@Suppress("unused")
 enum class Confidence {
   LOW,
   MEDIUM,

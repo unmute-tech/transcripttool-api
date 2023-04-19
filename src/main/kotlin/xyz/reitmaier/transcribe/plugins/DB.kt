@@ -7,30 +7,62 @@ import com.squareup.sqldelight.db.SqlDriver
 import com.squareup.sqldelight.sqlite.driver.asJdbcDriver
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import io.ktor.server.application.*
-import kotlinx.datetime.*
-import xyz.reitmaier.transcribe.data.*
-import xyz.reitmaier.transcribe.db.*
-import java.time.format.DateTimeFormatter
+import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationStopped
+import io.ktor.server.config.ApplicationConfig
+import xyz.reitmaier.transcribe.db.Request
+import xyz.reitmaier.transcribe.db.Task
+import xyz.reitmaier.transcribe.db.TranscribeDb
+import xyz.reitmaier.transcribe.db.Transcript
+import xyz.reitmaier.transcribe.db.User
+import kotlinx.datetime.Instant
+import xyz.reitmaier.transcribe.data.AssignmentId
+import xyz.reitmaier.transcribe.data.AssignmentStrategy
+import xyz.reitmaier.transcribe.data.DeploymentId
+import xyz.reitmaier.transcribe.data.EncryptedPassword
+import xyz.reitmaier.transcribe.data.MobileNumber
+import xyz.reitmaier.transcribe.data.MobileOperator
+import xyz.reitmaier.transcribe.data.Name
+import xyz.reitmaier.transcribe.data.RefreshToken
+import xyz.reitmaier.transcribe.data.RequestId
+import xyz.reitmaier.transcribe.data.TaskId
+import xyz.reitmaier.transcribe.data.TranscriptId
+import xyz.reitmaier.transcribe.data.UserId
+import xyz.reitmaier.transcribe.db.Assignment
+import xyz.reitmaier.transcribe.db.Deployment
+import xyz.reitmaier.transcribe.db.Deployment_transcriber
 import javax.sql.DataSource
 
+private data class DBConfig(
+  val host: String,
+  val port: String,
+  val database: String,
+  val user: String,
+  val password: String,
+  val maxPoolSize: Int,
+) {
+  val url: String get() =
+    "jdbc:mysql://$host:$port/$database"
+  companion object {
+    fun from(config: ApplicationConfig): DBConfig {
+      val dbHost = config.property("database.host").getString()
+      val dbPort = config.property("database.port").getString()
+      val dbName = config.property("database.db").getString()
+      val dbUser = config.property("database.user").getString()
+      val dbPassword = config.property("database.password").getString()
+      val dbMaxPoolSize = config.property("database.maxPoolSize").getString().toInt()
+      return DBConfig(dbHost, dbPort, dbName, dbUser, dbPassword, dbMaxPoolSize)
+    }
+  }
+}
 fun Application.configureDB(): TranscribeDb {
-  val dbConfig = environment.config.config("database")
-  val host = dbConfig.property("host").getString()
-  val port = dbConfig.property("port").getString()
-  val database = dbConfig.property("db").getString()
-  val user = dbConfig.property("user").getString()
-  val passwd = dbConfig.property("password").getString()
-  val maxPoolSize = dbConfig.property("maxPoolSize").getString().toInt()
-  val testing = dbConfig.propertyOrNull("testing")
-
-  val url = "jdbc:mysql://$host:$port/$database"
+  val dbConfig = DBConfig.from(environment.config)
 
   val datasourceConfig = HikariConfig().apply {
-    jdbcUrl = url
-    username = user
-    password = passwd
-    maximumPoolSize = maxPoolSize
+    jdbcUrl = dbConfig.url
+    username = dbConfig.user
+    password = dbConfig.password
+    maximumPoolSize = dbConfig.maxPoolSize
 
     // Driver needs to be explicitly set in order to produce fatjar
     // https://github.com/brettwooldridge/HikariCP/issues/540
@@ -100,7 +132,6 @@ fun Application.configureDB(): TranscribeDb {
   environment.monitor.subscribe(ApplicationStopped) { driver.close() }
 
   return db
-
 }
 
 private fun SqlDriver.migrate(database: TranscribeDb) {
@@ -116,8 +147,6 @@ private fun SqlDriver.migrate(database: TranscribeDb) {
     database.settingsQueries.setVersion(version + 1)
   }
 }
-
-val timestampFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
 private val userIdAdapter = object : ColumnAdapter<UserId, Int> {
   override fun decode(databaseValue: Int): UserId = UserId(databaseValue)
