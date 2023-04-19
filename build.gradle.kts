@@ -34,16 +34,6 @@ repositories {
   mavenCentral()
 }
 
-// make all when statements exhaustive by default and opt-in to errors instead of warnings
-kotlin {
-  sourceSets.all {
-    languageSettings {
-      languageVersion = "1.6"
-      progressiveMode = true
-    }
-  }
-}
-
 dependencies {
   // ktor
   implementation(libs.ktor.server.auth)
