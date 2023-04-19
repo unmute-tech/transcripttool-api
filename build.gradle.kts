@@ -2,6 +2,9 @@ import io.gitlab.arturbosch.detekt.extensions.DetektExtension.Companion.DEFAULT_
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension.Companion.DEFAULT_SRC_DIR_KOTLIN
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension.Companion.DEFAULT_TEST_SRC_DIR_JAVA
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension.Companion.DEFAULT_TEST_SRC_DIR_KOTLIN
+import io.ktor.plugin.features.*
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 val main_class by extra("io.ktor.server.netty.EngineMain")
 val docker_image = "transcriptapi:0.0.1"
 
@@ -11,10 +14,7 @@ val docker_image = "transcriptapi:0.0.1"
   alias(libs.plugins.kotlin.serialization)
   alias(libs.plugins.sqldelight)
   alias(libs.plugins.detekt)
-
-  // Docker
-  // TODO https://github.com/ktorio/ktor-build-plugins better alternative?
-  alias(libs.plugins.jib)
+  alias(libs.plugins.ktor)
 }
 
 sqldelight {
@@ -32,6 +32,19 @@ application {
 
 repositories {
   mavenCentral()
+}
+
+java {
+  // align with ktor/docker JRE
+  sourceCompatibility = JavaVersion.VERSION_17
+  targetCompatibility = JavaVersion.VERSION_17
+}
+tasks {
+  withType<KotlinCompile>().configureEach {
+    kotlinOptions {
+      jvmTarget = "${JavaVersion.VERSION_17}"
+    }
+  }
 }
 
 dependencies {
@@ -77,23 +90,30 @@ dependencies {
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.ktor.server.tests.jvm)
 }
-
-jib {
-  container {
-    ports = listOf("8088")
-    mainClass = main_class
-    to.image = docker_image
-    appRoot = "/app"
-    // good defauls intended for Java 8 (>= 8u191) containers
-    jvmFlags = listOf(
-      "-server",
-      "-Djava.awt.headless=true",
-      "-XX:InitialRAMFraction=2",
-      "-XX:MinRAMFraction=2",
-      "-XX:MaxRAMFraction=2",
-      "-XX:+UseG1GC",
-      "-XX:MaxGCPauseMillis=100",
-      "-XX:+UseStringDeduplication"
+class PrivateImageRegistry(
+  registryUrl: String,
+  imageName: String,
+  override val username: Provider<String>,
+  override val password: Provider<String>,
+): DockerImageRegistry {
+  override val toImage: Provider<String> = provider {
+    "$registryUrl/$imageName"
+  }
+}
+ktor {
+  docker {
+    // align with java config
+    val dockerImageName = "transcriptapi"
+    jreVersion.set(io.ktor.plugin.features.JreVersion.JRE_17)
+    localImageName.set(dockerImageName)
+    imageTag.set("latest")
+    externalRegistry.set(
+      PrivateImageRegistry(
+        "registry.reitmaier.xyz",
+        dockerImageName,
+        providers.environmentVariable("PRIVATE_DOCKER_REGISTRY_USER"),
+        providers.environmentVariable("PRIVATE_DOCKER_REGISTRY_PASSWORD"),
+      )
     )
   }
 }
