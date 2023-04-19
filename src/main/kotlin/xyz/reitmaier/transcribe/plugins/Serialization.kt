@@ -14,10 +14,4 @@ fun Application.configureSerialization() {
             isLenient = true
         })
     }
-
-    routing {
-        get("/json/kotlinx-serialization") {
-            call.respond(mapOf("hello" to "world"))
-        }
-    }
 }

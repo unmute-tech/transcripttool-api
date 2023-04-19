@@ -24,9 +24,6 @@ fun Application.configureDB(): TranscribeDb {
   val maxPoolSize = dbConfig.property("maxPoolSize").getString().toInt()
   val testing = dbConfig.propertyOrNull("testing")
 
-//  See https://github.com/AlecStrong/sql-psi/issues/153
-//  Re: ?stringtype=unspecified
-//  val jdbcUrl = "jdbc:postgresql://$host:$port/$database?stringtype=unspecified"
   val url = "jdbc:mysql://$host:$port/$database"
 
   val datasourceConfig = HikariConfig().apply {

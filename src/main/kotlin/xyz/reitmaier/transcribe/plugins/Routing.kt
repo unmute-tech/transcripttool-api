@@ -44,10 +44,22 @@ data class JWTConfig(
   }
 }
 
+data class AdminConfig(
+  val password: String,
+) {
+  companion object {
+    fun from(config: ApplicationConfig): AdminConfig {
+      val adminPassword = config.property("admin.password").getString()
+      return AdminConfig(adminPassword)
+    }
+  }
+}
+
 
 fun Application.configureRouting(
   repo: TranscribeRepo,
-  jwtConfig: JWTConfig = JWTConfig.from(environment.config)
+  jwtConfig: JWTConfig = JWTConfig.from(environment.config),
+  adminConfig: AdminConfig = AdminConfig.from(environment.config)
 ) {
   val log = InlineLogger()
   val authService = AuthService(repo, jwtConfig)
@@ -55,7 +67,7 @@ fun Application.configureRouting(
     basic("admin-basic-auth") {
       realm = "Admin"
       validate { credentials ->
-        if (credentials.name == "admin" && credentials.password == "JQWm2oSn7KXm") {
+        if (credentials.name == "admin" && credentials.password == adminConfig.password) {
           UserIdPrincipal(credentials.name)
         } else {
           null
@@ -83,7 +95,7 @@ fun Application.configureRouting(
   }
   routing {
     post("/error") {
-      val errorMessage = call.receiveOrNull<String>().toResultOr { InvalidRequest }
+      val errorMessage = runCatching {  call.receive<String>() }.mapError { InvalidRequest }
       errorMessage.fold(
         success = {
           log.debug { it }
