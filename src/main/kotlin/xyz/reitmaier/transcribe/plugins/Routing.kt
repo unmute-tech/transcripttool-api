@@ -16,7 +16,6 @@ import io.ktor.server.html.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import xyz.reitmaier.transcribe.auth.AuthResponse
 import xyz.reitmaier.transcribe.auth.AuthService
 import xyz.reitmaier.transcribe.auth.CLAIM_MOBILE
 import xyz.reitmaier.transcribe.data.*
@@ -117,7 +116,7 @@ fun Application.configureRouting(
       }
 
       get("/user/{$USER_ID_PARAMETER}/task/{$TASK_ID_PARAMETER}/file") {
-        binding<TaskFileInfo, DomainMessage> {
+        binding {
           val taskId = call.parameters.readTaskId().bind()
           val userId = call.parameters.readUserId().bind()
           repo.getTaskFileInfo(taskId, userId).bind()
@@ -166,7 +165,7 @@ fun Application.configureRouting(
       }
     }
     post("/register") {
-      call.receiveOrNull<RegistrationRequest>().toResultOr { InvalidRequest }
+      runCatching {  call.receive<RegistrationRequest>() }.mapError { InvalidRequest }
         .andThen { repo.insertUser(it.name, it.mobile, it.password, it.operator) }
         .fold(
           success = {
@@ -178,8 +177,8 @@ fun Application.configureRouting(
         )
     }
     post("/refresh") {
-      binding<AuthResponse, DomainMessage> {
-        val refreshToken = call.receiveOrNull<RefreshToken>().toResultOr { InvalidRequest }.bind()
+      binding {
+        val refreshToken = runCatching { call.receive<RefreshToken>() }.mapError { InvalidRequest }.bind()
         val user = repo.findUserByRefreshToken(refreshToken).bind()
         val response = authService.generateResponse(user, refreshToken).bind()
         response
@@ -189,9 +188,13 @@ fun Application.configureRouting(
       )
     }
     post("/login") {
-      val loginRequest = call.receive<LoginRequest>()
-      log.info { "Login request $loginRequest" }
-      repo.findUserByMobileAndPassword(loginRequest.mobile, loginRequest.password)
+      runCatching {
+        call.receive<LoginRequest>()
+      }.mapError { InvalidRequest }
+        .andThen {
+          log.info { "Login request $it" }
+          repo.findUserByMobileAndPassword(it.mobile, it.password)
+        }
         .andThen { user ->
           authService.generateResponse(
             user = user,
@@ -212,7 +215,7 @@ fun Application.configureRouting(
       route("/tasks") {
         get {
           val mobile = call.getMobileOfAuthenticatedUser()
-          binding<List<TaskDto>, DomainMessage> {
+          binding {
             val user = repo.findUserByMobile(mobile).bind()
             val tasks = repo.getHydratedUserTasks(user.id).bind()
             tasks
@@ -269,7 +272,7 @@ fun Application.configureRouting(
 
         get("/{$TASK_ID_PARAMETER}") {
           val mobile = call.getMobileOfAuthenticatedUser()
-          binding<TaskDto, DomainMessage> {
+          binding {
             val user = repo.findUserByMobile(mobile).bind()
             repo.getUserTaskDto(
               taskId = call.parameters.readTaskId().bind(),
@@ -282,14 +285,14 @@ fun Application.configureRouting(
         }
         post("/{$TASK_ID_PARAMETER}/transcripts") {
           val mobile = call.getMobileOfAuthenticatedUser()
-          binding<Int, DomainMessage> {
+          binding {
             val user = repo.findUserByMobile(mobile).bind()
             val task = repo.getUserTaskDto(
               taskId = call.parameters.readTaskId().bind(),
               userId = user.id
             ).bind()
-            val transcripts = call.receiveOrNull<List<NewTranscript>>()
-              .toResultOr { InvalidRequest }.bind()
+            val transcripts = runCatching {  call.receive<List<NewTranscript>>() }
+              .mapError { InvalidRequest }.bind()
             repo.insertTranscripts(task.id, transcripts).bind()
           }.fold(
             success = { n -> call.respond(HttpStatusCode.Created, n) },
@@ -299,14 +302,14 @@ fun Application.configureRouting(
 
         post("/{$TASK_ID_PARAMETER}/complete") {
           val mobile = call.getMobileOfAuthenticatedUser()
-          binding<Unit, DomainMessage> {
+          binding {
             val user = repo.findUserByMobile(mobile).bind()
             val task = repo.getUserTaskDto(
               taskId = call.parameters.readTaskId().bind(),
               userId = user.id
             ).bind()
-            val completeTaskRequest = call.receiveOrNull<CompleteTaskRequest>()
-              .toResultOr { InvalidRequest }.bind()
+            val completeTaskRequest = runCatching {  call.receive<CompleteTaskRequest>() }
+              .mapError { InvalidRequest }.bind()
             repo.completeTask(task.id, completeTaskRequest).bind()
           }.fold(
             success = { call.respond(HttpStatusCode.OK) },
@@ -316,14 +319,14 @@ fun Application.configureRouting(
 
         post("/{$TASK_ID_PARAMETER}/reject") {
           val mobile = call.getMobileOfAuthenticatedUser()
-          binding<Unit, DomainMessage> {
+          binding {
             val user = repo.findUserByMobile(mobile).bind()
             val task = repo.getUserTaskDto(
               taskId = call.parameters.readTaskId().bind(),
               userId = user.id
             ).bind()
-            val rejectReason = call.receiveOrNull<RejectReason>()
-              .toResultOr { InvalidRequest }.bind()
+            val rejectReason = runCatching {  call.receive<RejectReason>() }
+              .mapError { InvalidRequest }.bind()
             repo.rejectTask(task.id, rejectReason).bind()
           }.fold(
             success = { call.respond(HttpStatusCode.OK) },
@@ -334,7 +337,7 @@ fun Application.configureRouting(
 
         get("/{$TASK_ID_PARAMETER}/file") {
           val mobile = call.getMobileOfAuthenticatedUser()
-          binding<TaskFileInfo, DomainMessage> {
+          binding {
             val user = repo.findUserByMobile(mobile).bind()
             val task = repo.getUserTaskDto(
               taskId = call.parameters.readTaskId().bind(),
