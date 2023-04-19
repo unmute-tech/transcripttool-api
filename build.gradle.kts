@@ -1,23 +1,20 @@
-val ktor_version: String by project
-val kotlin_version: String by project
-val logback_version: String by project
-val coroutines_version: String by project
-val postgres_version: String by project
-val sqldelight_version: String by project
-val hikaricp_version: String by project
+import io.gitlab.arturbosch.detekt.extensions.DetektExtension.Companion.DEFAULT_SRC_DIR_JAVA
+import io.gitlab.arturbosch.detekt.extensions.DetektExtension.Companion.DEFAULT_SRC_DIR_KOTLIN
+import io.gitlab.arturbosch.detekt.extensions.DetektExtension.Companion.DEFAULT_TEST_SRC_DIR_JAVA
+import io.gitlab.arturbosch.detekt.extensions.DetektExtension.Companion.DEFAULT_TEST_SRC_DIR_KOTLIN
 val main_class by extra("io.ktor.server.netty.EngineMain")
 val docker_image = "transcriptapi:0.0.1"
 
-plugins {
+@Suppress("DSL_SCOPE_VIOLATION") plugins {
   application
-  kotlin("jvm") version "1.6.10"
-  id("org.jetbrains.kotlin.plugin.serialization") version "1.6.10"
-
-  // DB
-  id("com.squareup.sqldelight") version "1.5.3"
+  alias(libs.plugins.kotlin.jvm)
+  alias(libs.plugins.kotlin.serialization)
+  alias(libs.plugins.sqldelight)
+  alias(libs.plugins.detekt)
 
   // Docker
-  id("com.google.cloud.tools.jib") version "3.2.1"
+  // TODO https://github.com/ktorio/ktor-build-plugins better alternative?
+  alias(libs.plugins.jib)
 }
 
 sqldelight {
@@ -49,45 +46,46 @@ kotlin {
 
 dependencies {
   // ktor
-  implementation("io.ktor:ktor-server-auth:$ktor_version")
-  implementation("io.ktor:ktor-server-auth-jwt:$ktor_version")
-  implementation("io.ktor:ktor-server-auto-head-response:$ktor_version")
-  implementation("io.ktor:ktor-server-content-negotiation:$ktor_version")
-  implementation("io.ktor:ktor-server-default-headers:$ktor_version")
-  implementation("io.ktor:ktor-server-partial-content:$ktor_version")
-  implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version")
-  implementation("io.ktor:ktor-server-core-jvm:$ktor_version")
-  implementation("io.ktor:ktor-server-netty-jvm:$ktor_version")
+  implementation(libs.ktor.server.auth)
+  implementation(libs.ktor.server.auth.jwt)
+  implementation(libs.ktor.server.auto.head.response)
+  implementation(libs.ktor.server.content.negotiation)
+  implementation(libs.ktor.server.default.headers)
+  implementation(libs.ktor.server.partial.content)
+  implementation(libs.ktor.serialization.kotlinx.json)
+  implementation(libs.ktor.server.core.jvm)
+  implementation(libs.ktor.server.netty.jvm)
+  implementation(libs.ktor.server.html.builder)
 
   // db -- config
-  implementation("com.zaxxer:HikariCP:$hikaricp_version")
+  implementation(libs.hikari)
 
   // db -- mysql
-  implementation("mysql:mysql-connector-java:8.0.29")
+  implementation(libs.mysql.connector.java)
 
   // db -- sqldelight
-  implementation("com.squareup.sqldelight:runtime-jvm:$sqldelight_version")
-  implementation("com.squareup.sqldelight:jdbc-driver:$sqldelight_version")
-  implementation("com.squareup.sqldelight:coroutines-extensions:$sqldelight_version")
+  implementation(libs.squareup.sqldelight.runtime.jvm)
+  implementation(libs.squareup.sqldelight.jdbc.driver)
+  implementation(libs.squareup.sqldelight.coroutine.extensions)
 
   // utilities
-  implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.2")
+  implementation(libs.kotlinx.datetime)
 
   // logging
-  implementation("io.ktor:ktor-server-call-logging:$ktor_version")
-  implementation("ch.qos.logback:logback-classic:$logback_version")
-  implementation("com.michael-bull.kotlin-inline-logger:kotlin-inline-logger:1.0.4")
+  implementation(libs.ktor.server.call.logging)
+  implementation(libs.logback.classic)
+  implementation(libs.kotlin.inline.logger)
 
   // Coroutines
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version")
+  implementation(libs.kotlinx.coroutines.core)
 
   // Result monad for modelling success/failure operations
-  implementation("com.michael-bull.kotlin-result:kotlin-result:1.1.16")
-  implementation("com.michael-bull.kotlin-result:kotlin-result-coroutines:1.1.16")
+  implementation(libs.kotlin.result)
+  implementation(libs.kotlin.result.coroutines)
 
   // testing
-  testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
-  testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
+  testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.ktor.server.tests.jvm)
 }
 
 jib {
@@ -107,5 +105,28 @@ jib {
       "-XX:MaxGCPauseMillis=100",
       "-XX:+UseStringDeduplication"
     )
+  }
+}
+
+allprojects {
+  apply {
+    plugin(rootProject.libs.plugins.detekt.get().pluginId)
+  }
+
+  dependencies {
+    detektPlugins(rootProject.libs.io.gitlab.arturbosch.detekt.formatting)
+  }
+
+  detekt {
+    source = files(
+      "src",
+      DEFAULT_SRC_DIR_JAVA,
+      DEFAULT_TEST_SRC_DIR_JAVA,
+      DEFAULT_SRC_DIR_KOTLIN,
+      DEFAULT_TEST_SRC_DIR_KOTLIN,
+    )
+    toolVersion = rootProject.libs.versions.detekt.get()
+    config = rootProject.files("config/detekt/detekt.yml")
+    parallel = true
   }
 }
