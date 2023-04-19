@@ -1,5 +1,30 @@
 allDeployments:
 SELECT * FROM deployment ORDER BY started_at DESC;
 
-getDeploymentsers:
+getDeploymentUsers:
 SELECT * FROM user WHERE id IN (SELECT user_id FROM deployment_transcriber WHERE deployment_id = ?);
+
+getDeployment:
+SELECT * FROM deployment WHERE id = ?;
+
+getDeploymentTasks:
+SELECT * FROM hydrated_task AS ht WHERE
+ht.user_id IN (SELECT user_id FROM deployment_transcriber WHERE deployment_id = ?)
+AND ht.created_at >= (SELECT joined_at FROM deployment_transcriber WHERE user_id = ht.user_id)
+AND
+  (SELECT finished_at FROM deployment_transcriber WHERE user_id = ht.user_id) IS NULL
+  OR
+  ht.created_at <= (SELECT finished_at FROM deployment_transcriber WHERE user_id = ht.user_id)
+
+ORDER BY ht.path, ht.user_id, ht.completed_at;
+
+getCompletedTasks:
+SELECT user_id, COUNT(path) FROM hydrated_task AS ht WHERE
+ht.completed_at IS NOT NULL AND
+ht.user_id IN (SELECT user_id FROM deployment_transcriber WHERE deployment_id = ?)
+AND ht.created_at >= (SELECT joined_at FROM deployment_transcriber WHERE user_id = ht.user_id)
+AND
+  (SELECT finished_at FROM deployment_transcriber WHERE user_id = ht.user_id) IS NULL
+  OR
+  ht.created_at <= (SELECT finished_at FROM deployment_transcriber WHERE user_id = ht.user_id)
+GROUP BY ht.user_id;

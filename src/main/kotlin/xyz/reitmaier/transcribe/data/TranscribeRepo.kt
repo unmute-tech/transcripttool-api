@@ -13,6 +13,7 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
   private val log = InlineLogger()
   private val users = db.userQueries
   private val tasks = db.taskQueries
+  private val deployments = db.deploymentQueries
   private val transcripts = db.transcriptQueries
   private val requests = db.requestQueries
   private val settings = db.settingsQueries
@@ -170,8 +171,32 @@ class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor
         }
       }
 
+  fun getTaskFilePath(taskId: TaskId) : DomainResult<String> =
+    runCatching {
+      tasks.selectTaskById(taskId).executeAsOne().path
+      ""
+    }.mapError { DatabaseError }
+
   private fun getUserTask(taskId: TaskId, userId: UserId) : DomainResult<Hydrated_task> =
     tasks.selectTaskByIdAndUserId(userId, taskId).executeAsOneOrNull().toResultOr { TaskNotFound }
+
+  fun getDeployments() : DomainResult<List<Deployment>> =
+    runCatching {
+      deployments.allDeployments().executeAsList()
+    }.mapError { DatabaseError }
+
+  fun getDeploymentTasks(id: DeploymentId) : DomainResult<List<Hydrated_task>> =
+    runCatching {
+      deployments.getDeploymentTasks(id).executeAsList()
+    }.mapError { DatabaseError }
+  fun getDeployment(id: DeploymentId) : DomainResult<Deployment> =
+    runCatching {
+      deployments.getDeployment(id).executeAsOne()
+    }.mapError { DatabaseError }
+  fun getDeploymentUsers(id: DeploymentId) : DomainResult<List<User>> =
+    runCatching {
+      deployments.getDeploymentUsers(id).executeAsList()
+    }.mapError { DatabaseError }
 
   fun getHydratedUserTasks(userId: UserId) : DomainResult<List<TaskDto>> =
     runCatching {

@@ -11,6 +11,12 @@ object UserNotFound : DomainMessage("User not found")
 object FileNotFound : DomainMessage("File not found")
 object TaskIdRequired : DomainMessage("Task Id is Required")
 object TaskIdInvalid : DomainMessage("Task Id is Invalid")
+
+object UserIdRequired : DomainMessage("User Id is Required")
+object UserIdInvalid : DomainMessage("User Id is Invalid")
+
+object DeploymentIdRequired : DomainMessage("Deployment Id is Required")
+object DeploymentIdInvalid : DomainMessage("Deployment Id is Invalid")
 object TaskNotFound : DomainMessage("Task not found")
 object TranscriptNotFound : DomainMessage("Transcript not found")
 object MobileOrPasswordIncorrect : DomainMessage("Mobile number or password is incorrect")

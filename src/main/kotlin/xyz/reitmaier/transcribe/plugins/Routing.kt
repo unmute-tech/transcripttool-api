@@ -12,6 +12,7 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.config.*
+import io.ktor.server.html.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -19,6 +20,8 @@ import xyz.reitmaier.transcribe.auth.AuthResponse
 import xyz.reitmaier.transcribe.auth.AuthService
 import xyz.reitmaier.transcribe.auth.CLAIM_MOBILE
 import xyz.reitmaier.transcribe.data.*
+import xyz.reitmaier.transcribe.templates.Layout
+import xyz.reitmaier.transcribe.templates.StatusViewTemplate
 import java.io.File
 import java.util.*
 
@@ -52,7 +55,7 @@ fun Application.configureRouting(
     basic("admin-basic-auth") {
       realm = "Admin"
       validate { credentials ->
-        if (credentials.name == "+19783099058" && credentials.password == "JQWm2oSn7KXm") {
+        if (credentials.name == "admin" && credentials.password == "JQWm2oSn7KXm") {
           UserIdPrincipal(credentials.name)
         } else {
           null
@@ -99,6 +102,55 @@ fun Application.configureRouting(
     authenticate("admin-basic-auth") {
       get("/admin") {
         call.respondText("Hello, ${call.principal<UserIdPrincipal>()?.name}!")
+      }
+
+      get("/user/{$USER_ID_PARAMETER}/task/{$TASK_ID_PARAMETER}/file") {
+        binding<TaskFileInfo, DomainMessage> {
+          val taskId = call.parameters.readTaskId().bind()
+          val userId = call.parameters.readUserId().bind()
+          repo.getTaskFileInfo(taskId, userId).bind()
+        }
+          .fold(
+            failure = { call.respondDomainMessage(it) },
+            success = { taskFileInfo ->
+              call.response.header(
+                HttpHeaders.ContentDisposition,
+                ContentDisposition.Attachment.withParameter(
+                  ContentDisposition.Parameters.FileName,
+                  taskFileInfo.displayName
+                )
+                  .toString()
+              )
+              call.respondFile(taskFileInfo.taskFile)
+            },
+          )
+      }
+      get("/status/deployment/{$DEPLOYMENT_ID_PARAMETER}") {
+        val deploymentId = call.parameters.readDeploymentId()
+          .fold(
+            success = { it },
+            failure = {return@get call.respondDomainMessage(it) }
+          )
+        val deployment = repo.getDeployment(deploymentId)
+            .fold(
+              success = { it },
+              failure = {return@get call.respondDomainMessage(it) }
+            )
+        val users = repo.getDeploymentUsers(deployment.id)
+          .fold(
+            success = { it },
+            failure = {return@get call.respondDomainMessage(it) }
+          )
+        val tasks = repo.getDeploymentTasks(deployment.id)
+          .fold(
+            success = { it },
+            failure = {return@get call.respondDomainMessage(it) }
+          )
+        call.respondHtmlTemplate(Layout()) {
+          content {
+            insert(StatusViewTemplate(deployment, users, tasks)) {}
+          }
+        }
       }
     }
     post("/register") {
@@ -299,12 +351,30 @@ fun Application.configureRouting(
 }
 
 const val TASK_ID_PARAMETER = "taskId"
+const val USER_ID_PARAMETER = "userId"
+const val DEPLOYMENT_ID_PARAMETER = "deploymentId"
 private fun Parameters.readTaskId(): Result<TaskId, DomainMessage> {
   return get(TASK_ID_PARAMETER)
     .toResultOr { TaskIdRequired }
     .andThen { it.toIntResult() }
     .mapError { TaskIdInvalid }
     .map { TaskId(it) }
+}
+
+private fun Parameters.readUserId(): Result<UserId, DomainMessage> {
+  return get(USER_ID_PARAMETER)
+    .toResultOr { UserIdRequired }
+    .andThen { it.toIntResult() }
+    .mapError { UserIdInvalid }
+    .map { UserId(it) }
+}
+
+private fun Parameters.readDeploymentId(): Result<DeploymentId, DomainMessage> {
+  return get(DEPLOYMENT_ID_PARAMETER)
+    .toResultOr { DeploymentIdRequired }
+    .andThen { it.toIntResult() }
+    .mapError { DeploymentIdInvalid }
+    .map { DeploymentId(it) }
 }
 
 fun String.toIntResult(): Result<Int, Throwable> =
@@ -323,8 +393,8 @@ suspend fun ApplicationCall.respondDomainMessage(domainMessage: DomainMessage) {
   log.debug { "Responding with Error: $domainMessage" }
   when (domainMessage) {
     DatabaseError -> respond(HttpStatusCode.InternalServerError, domainMessage.message)
-    DuplicateFile -> respond(HttpStatusCode.BadRequest, domainMessage.message)
-    DuplicateUser -> respond(HttpStatusCode.BadRequest, domainMessage.message)
+    DuplicateFile -> respond(HttpStatusCode.Conflict, domainMessage.message)
+    DuplicateUser -> respond(HttpStatusCode.Conflict, domainMessage.message)
     InvalidRequest -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     UserNotFound -> respond(HttpStatusCode.Forbidden, domainMessage.message)
     PasswordIncorrect -> respond(HttpStatusCode.Forbidden, domainMessage.message)
@@ -332,8 +402,12 @@ suspend fun ApplicationCall.respondDomainMessage(domainMessage: DomainMessage) {
     RequestFileMissing -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     FileNameMissing -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     ContentLengthMissing -> respond(HttpStatusCode.BadRequest, domainMessage.message)
+    DeploymentIdInvalid -> respond(HttpStatusCode.BadRequest, domainMessage.message)
+    DeploymentIdRequired -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     TaskIdInvalid -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     TaskIdRequired -> respond(HttpStatusCode.BadRequest, domainMessage.message)
+    UserIdInvalid -> respond(HttpStatusCode.BadRequest, domainMessage.message)
+    UserIdRequired -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     TaskNotFound -> respond(HttpStatusCode.BadRequest, domainMessage.message)
     TranscriptNotFound -> respond(HttpStatusCode.NotFound, domainMessage.message)
     FileNotFound -> respond(HttpStatusCode.NotFound, domainMessage.message)
