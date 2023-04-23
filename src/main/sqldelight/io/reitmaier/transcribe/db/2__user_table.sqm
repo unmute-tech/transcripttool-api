@@ -1,0 +1,18 @@
+import kotlinx.datetime.Instant;
+import io.reitmaier.transcribe.data.EncryptedPassword;
+import io.reitmaier.transcribe.data.MobileNumber;
+import io.reitmaier.transcribe.data.MobileOperator;
+import io.reitmaier.transcribe.data.Name;
+import io.reitmaier.transcribe.data.UserId;
+
+-- user is reserved word in postgres -> users
+CREATE TABLE IF NOT EXISTS user
+(
+    id INT AS UserId NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    password VARCHAR(100) AS EncryptedPassword NOT NULL,
+    mobile_number VARCHAR(16) AS MobileNumber NOT NULL,
+    mobile_operator VARCHAR(255) AS MobileOperator NOT NULL,
+    name VARCHAR(255) AS Name NOT NULL,
+    created_at BIGINT AS Instant NOT NULL,
+    CONSTRAINT mobile_number_unique UNIQUE (mobile_number)
+);

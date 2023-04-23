@@ -1,0 +1,34 @@
+import kotlinx.datetime.Instant;
+import io.reitmaier.transcribe.data.TaskId;
+import io.reitmaier.transcribe.data.TaskProvenance;
+import io.reitmaier.transcribe.data.UserId;
+
+-- user is reserved word in postgres -> users
+CREATE TABLE IF NOT EXISTS task
+(
+    id INT AS TaskId NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    user_id INT AS UserId NOT NULL REFERENCES user(id),
+    path VARCHAR(255) NOT NULL,
+    length BIGINT NOT NULL, -- Necessary?
+    provenance VARCHAR(255) AS TaskProvenance NOT NULL,
+    display_name VARCHAR(255) NOT NULL, -- Necessary?
+    created_at BIGINT AS Instant NOT NULL,
+    updated_at BIGINT AS Instant NOT NULL
+--     fcm_token  TEXT AS FcmToken
+--     CONSTRAINT path_unique UNIQUE (path)
+);
+
+-- CREATE TABLE IF NOT EXISTS Task_Entity
+-- (
+--     id SERIAL8 AS TaskId PRIMARY KEY,
+--     user_id INT AS UserId  NOT NULL REFERENCES User_Entity(id),
+--     path VARCHAR(255) NOT NULL UNIQUE,
+--     created_at TIMESTAMP AS LocalDateTime NOT NULL DEFAULT CURRENT_TIMESTAMP
+-- );
+-- CREATE TABLE IF NOT EXISTS Task_Entity
+-- (
+--     id SERIAL8 AS TaskId PRIMARY KEY,
+--     user_id INT AS UserId  NOT NULL REFERENCES User_Entity(id),
+--     path VARCHAR(255) NOT NULL UNIQUE,
+--     created_at TIMESTAMP AS LocalDateTime NOT NULL DEFAULT CURRENT_TIMESTAMP
+-- );

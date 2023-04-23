@@ -18,12 +18,12 @@ plugins {
 
 sqldelight {
   database("TranscribeDb") {
-    packageName = "xyz.reitmaier.transcribe.db"
+    packageName = "io.reitmaier.transcribe.db"
     dialect = "mysql"
     deriveSchemaFromMigrations = true
   }
 }
-group = "xyz.reitmaier"
+group = "io.reitmaier"
 version = "0.0.1"
 application {
   mainClass.set(main_class)
@@ -108,7 +108,7 @@ ktor {
     imageTag.set("latest")
     externalRegistry.set(
       PrivateImageRegistry(
-        "registry.reitmaier.xyz",
+        "registry.reitmaier.io",
         dockerImageName,
         providers.environmentVariable("PRIVATE_DOCKER_REGISTRY_USER"),
         providers.environmentVariable("PRIVATE_DOCKER_REGISTRY_PASSWORD"),

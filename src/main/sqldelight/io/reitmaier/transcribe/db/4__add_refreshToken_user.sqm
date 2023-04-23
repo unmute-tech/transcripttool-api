@@ -1,0 +1,4 @@
+import io.reitmaier.transcribe.data.RefreshToken;
+
+-- user is reserved word in postgres -> users
+ALTER TABLE user ADD COLUMN refresh_token VARCHAR(255) AS RefreshToken;

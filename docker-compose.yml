@@ -41,7 +41,7 @@ services:
       - "traefik.enable=true"
       ## HTTP Routers
       - "traefik.http.routers.transcribeapi-rtr.entrypoints=https"
-      - "traefik.http.routers.transcribeapi-rtr.rule=Host(`transcribeapi.reitmaier.xyz`)"
+      - "traefik.http.routers.transcribeapi-rtr.rule=Host(`transcribeapi.reitmaier.io`)"
       ## Middlewares
       - "traefik.http.routers.transcribeapi-rtr.middlewares=rate-limit@file"
       ## HTTP Services
@@ -59,7 +59,7 @@ services:
       - "traefik.enable=true"
       ## HTTP Routers
       - "traefik.http.routers.transcribedb-rtr.entrypoints=https"
-      - "traefik.http.routers.transcribedb-rtr.rule=Host(`transcribedb.reitmaier.xyz`)"
+      - "traefik.http.routers.transcribedb-rtr.rule=Host(`transcribedb.reitmaier.io`)"
       ## Middlewares
       - "traefik.http.routers.transcribedb-rtr.middlewares=rate-limit@file,oauth@file"
       ## HTTP Services
