@@ -89,14 +89,15 @@ dependencies {
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.ktor.server.tests.jvm)
 }
+
 class PrivateImageRegistry(
-  registryUrl: String,
+  registryUrl: Provider<String>,
   imageName: String,
   override val username: Provider<String>,
   override val password: Provider<String>,
 ): DockerImageRegistry {
   override val toImage: Provider<String> = provider {
-    "$registryUrl/$imageName"
+    "${registryUrl.get().substringAfter("://").trim('/')}/$imageName"
   }
 }
 ktor {
@@ -108,12 +109,14 @@ ktor {
     imageTag.set("latest")
     externalRegistry.set(
       PrivateImageRegistry(
-        "registry.reitmaier.io",
+        providers.environmentVariable("PRIVATE_DOCKER_REGISTRY_URL"),
         dockerImageName,
         providers.environmentVariable("PRIVATE_DOCKER_REGISTRY_USER"),
         providers.environmentVariable("PRIVATE_DOCKER_REGISTRY_PASSWORD"),
       )
     )
+    // can also use DockerImageRegistry.dockerHub()
+    // or just use local image and delete external registry
   }
 }
 
