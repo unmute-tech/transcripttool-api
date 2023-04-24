@@ -8,13 +8,13 @@ import com.github.michaelbull.result.mapError
 import com.github.michaelbull.result.runCatching
 import com.github.michaelbull.result.toResultOr
 import kotlinx.datetime.Clock
-import xyz.reitmaier.transcribe.auth.PasswordEncryptor
-import xyz.reitmaier.transcribe.db.Deployment
-import xyz.reitmaier.transcribe.db.Hydrated_task
-import xyz.reitmaier.transcribe.db.Request
-import xyz.reitmaier.transcribe.db.TranscribeDb
-import xyz.reitmaier.transcribe.db.Transcript
-import xyz.reitmaier.transcribe.db.User
+import io.reitmaier.transcribe.auth.PasswordEncryptor
+import io.reitmaier.transcribe.db.Deployment
+import io.reitmaier.transcribe.db.Hydrated_task
+import io.reitmaier.transcribe.db.Request
+import io.reitmaier.transcribe.db.TranscribeDb
+import io.reitmaier.transcribe.db.Transcript
+import io.reitmaier.transcribe.db.User
 import java.io.File
 
 class TranscribeRepo(private val db: TranscribeDb, private val passwordEncryptor: PasswordEncryptor) {

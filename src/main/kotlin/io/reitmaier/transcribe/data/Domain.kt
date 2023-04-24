@@ -4,7 +4,7 @@ import com.github.michaelbull.result.Result
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import xyz.reitmaier.transcribe.db.Hydrated_task
+import io.reitmaier.transcribe.db.Hydrated_task
 import java.io.File
 import java.util.UUID
 
