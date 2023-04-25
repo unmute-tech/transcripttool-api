@@ -1,5 +1,5 @@
 * TranscriptTool API Server
-The =TranscriptTool= API Server is implemented in [[https://kotlinlang.org/][Kotlin]] and runs on the [[https://ktor.io/][ktor]] server framework. The API Server distributes transcription tasks to registers users and collects completed transcriptions (and how they were built up over time) from users.
+The =TranscriptTool= API Server is implemented in [[https://kotlinlang.org/][Kotlin]] and runs on the [[https://ktor.io/][ktor]] server framework. The API Server distributes transcription tasks to registers users and collects completed transcriptions (and how they were built up over time) from users of the [[https://github.com/treitmaier/TranscriptTool][TranscriptTool]] app.
 
 ** Setup
 The [[build.gradle.kts][build.gradle.kts]] file contains build configurations to build, both a fat JAR of the API server as well as a dockerized version of the application.
