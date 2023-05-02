@@ -4,7 +4,6 @@ The =TranscriptTool= API Server is implemented in [[https://kotlinlang.org/][Kot
 ** Setup
 The [[build.gradle.kts][build.gradle.kts]] file contains build configurations to build, both a fat JAR of the API server as well as a dockerized version of the application.
 
-The [[docker-compose.yml]] file illustrates how the application can be deployed. While users register and are authenticated through [[https://ktor.io/docs/jwt.html][JSON Web Tokens (JWT)]], we recommend that the deployment is accessed through the https protocol. A reverse proxy, such as [[https://www.nginx.com/][nginx]] or [[https://traefik.io/traefik/][traefik]], is the easiest way of achieving this.
-
+The [[docker-compose.yml]] file illustrates how the application can be deployed.  Users register and are authenticated through [[https://ktor.io/docs/jwt.html][JSON Web Tokens (JWT)]], and we recommend that the deployment is accessed through the https protocol. A reverse proxy, such as [[https://www.nginx.com/][nginx]] or [[https://traefik.io/traefik/][traefik]], is the easiest way of achieving this.
 ** License
 Apache 2.0
