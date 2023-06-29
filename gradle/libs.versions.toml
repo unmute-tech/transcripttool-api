@@ -1,5 +1,5 @@
 [versions]
-coroutines = "1.7.0"
+coroutines = "1.7.2"
 datetime = "0.4.0"
 result = "1.1.17"
 retry = "1.0.9"
