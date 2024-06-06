@@ -9,7 +9,7 @@ import com.github.michaelbull.result.toResultOr
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.github.michaelbull.logging.InlineLogger
-import com.github.michaelbull.result.coroutines.binding.binding
+import com.github.michaelbull.result.coroutines.coroutineBinding
 import com.github.michaelbull.result.fold
 import com.github.michaelbull.result.get
 import io.ktor.http.ContentDisposition
@@ -130,7 +130,7 @@ fun Application.configureRouting(
       }
 
       get("/user/{$USER_ID_PARAMETER}/task/{$TASK_ID_PARAMETER}/file") {
-        binding {
+        coroutineBinding {
           val taskId = call.parameters.readTaskId().bind()
           val userId = call.parameters.readUserId().bind()
           repo.getTaskFileInfo(taskId, userId).bind()
@@ -191,7 +191,7 @@ fun Application.configureRouting(
         )
     }
     post("/refresh") {
-      binding {
+      coroutineBinding {
         val refreshToken = runCatching { call.receive<RefreshToken>() }.mapError { InvalidRequest }.bind()
         val user = repo.findUserByRefreshToken(refreshToken).bind()
         val response = authService.generateResponse(user, refreshToken).bind()
@@ -229,7 +229,7 @@ fun Application.configureRouting(
       route("/tasks") {
         get {
           val mobile = call.getMobileOfAuthenticatedUser()
-          binding {
+          coroutineBinding {
             val user = repo.findUserByMobile(mobile).bind()
             val tasks = repo.getHydratedUserTasks(user.id).bind()
             tasks
@@ -286,7 +286,7 @@ fun Application.configureRouting(
 
         get("/{$TASK_ID_PARAMETER}") {
           val mobile = call.getMobileOfAuthenticatedUser()
-          binding {
+          coroutineBinding {
             val user = repo.findUserByMobile(mobile).bind()
             repo.getUserTaskDto(
               taskId = call.parameters.readTaskId().bind(),
@@ -299,7 +299,7 @@ fun Application.configureRouting(
         }
         post("/{$TASK_ID_PARAMETER}/transcripts") {
           val mobile = call.getMobileOfAuthenticatedUser()
-          binding {
+          coroutineBinding {
             val user = repo.findUserByMobile(mobile).bind()
             val task = repo.getUserTaskDto(
               taskId = call.parameters.readTaskId().bind(),
@@ -316,7 +316,7 @@ fun Application.configureRouting(
 
         post("/{$TASK_ID_PARAMETER}/complete") {
           val mobile = call.getMobileOfAuthenticatedUser()
-          binding {
+          coroutineBinding {
             val user = repo.findUserByMobile(mobile).bind()
             val task = repo.getUserTaskDto(
               taskId = call.parameters.readTaskId().bind(),
@@ -333,7 +333,7 @@ fun Application.configureRouting(
 
         post("/{$TASK_ID_PARAMETER}/reject") {
           val mobile = call.getMobileOfAuthenticatedUser()
-          binding {
+          coroutineBinding {
             val user = repo.findUserByMobile(mobile).bind()
             val task = repo.getUserTaskDto(
               taskId = call.parameters.readTaskId().bind(),
@@ -351,7 +351,7 @@ fun Application.configureRouting(
 
         get("/{$TASK_ID_PARAMETER}/file") {
           val mobile = call.getMobileOfAuthenticatedUser()
-          binding {
+          coroutineBinding {
             val user = repo.findUserByMobile(mobile).bind()
             val task = repo.getUserTaskDto(
               taskId = call.parameters.readTaskId().bind(),

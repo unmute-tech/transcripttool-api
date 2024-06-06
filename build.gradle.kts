@@ -1,3 +1,4 @@
+import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import io.ktor.plugin.features.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -9,6 +10,8 @@ plugins {
   alias(libs.plugins.kotlin.serialization)
   alias(libs.plugins.sqldelight)
   alias(libs.plugins.ktor)
+  alias(libs.plugins.version.catalog.update)
+  alias(libs.plugins.gradle.versions)
 }
 
 sqldelight {
@@ -28,15 +31,15 @@ repositories {
   mavenCentral()
 }
 
+val javaVersion = JavaVersion.VERSION_17;
 java {
-  // align with ktor/docker JRE
-  sourceCompatibility = JavaVersion.VERSION_17
-  targetCompatibility = JavaVersion.VERSION_17
+  sourceCompatibility = javaVersion
+  targetCompatibility = javaVersion
 }
 tasks {
   withType<KotlinCompile>().configureEach {
     kotlinOptions {
-      jvmTarget = "${JavaVersion.VERSION_17}"
+      jvmTarget = "$javaVersion"
     }
   }
 }
@@ -97,9 +100,8 @@ class PrivateImageRegistry(
 }
 ktor {
   docker {
-    // align with java config
     val dockerImageName = "transcriptapi"
-    jreVersion.set(io.ktor.plugin.features.JreVersion.JRE_17)
+    jreVersion.set(javaVersion)
     localImageName.set(dockerImageName)
     imageTag.set("latest")
     externalRegistry.set(
@@ -113,3 +115,36 @@ ktor {
     // can also use DockerImageRegistry.dockerHub()
     // or just use local image and delete external registry
   }
+}
+
+versionCatalogUpdate {
+  // sort the catalog by key (default is true)
+  sortByKey.set(true)
+
+  keep {
+    // keep versions without any library or plugin reference
+    keepUnusedVersions.set(true)
+    // keep all libraries that aren't used in the project
+    keepUnusedLibraries.set(true)
+    // keep all plugins that aren't used in the project
+    keepUnusedPlugins.set(true)
+  }
+}
+fun isNonStable(version: String): Boolean {
+  val stableKeyword = listOf("RELEASE", "FINAL", "GA").any { version.uppercase().contains(it) }
+  val regex = "^[0-9,.v-]+(-r)?$".toRegex()
+  val isStable = stableKeyword || regex.matches(version)
+  return isStable.not()
+}
+// https://github.com/ben-manes/gradle-versions-plugin
+tasks.withType<DependencyUpdatesTask> {
+  resolutionStrategy {
+    componentSelection {
+      all {
+        if (isNonStable(candidate.version) && !isNonStable(currentVersion)) {
+          reject("Release candidate")
+        }
+      }
+    }
+  }
+}
