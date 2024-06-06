@@ -117,6 +117,11 @@ ktor {
   }
 }
 
+task<Exec>("deploy") {
+  dependsOn("publishImage")
+  commandLine("bash","./redeploy.sh")
+}
+
 versionCatalogUpdate {
   // sort the catalog by key (default is true)
   sortByKey.set(true)
