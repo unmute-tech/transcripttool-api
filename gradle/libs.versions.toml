@@ -3,7 +3,6 @@ coroutines = "1.7.2"
 datetime = "0.4.0"
 result = "1.1.18"
 retry = "1.0.9"
-detekt = "1.23.0"
 hikari="5.0.1"
 json = "1.5.1"
 kotlin = "1.8.22"
@@ -16,7 +15,6 @@ inline-logger = "1.0.5"
 
 [libraries]
 hikari = { module = "com.zaxxer:HikariCP", version.ref="hikari" }
-io-gitlab-arturbosch-detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 kotlin-inline-logger = { module = "com.michael-bull.kotlin-inline-logger:kotlin-inline-logger", version.ref = "inline-logger" }
 kotlin-result = { module = "com.michael-bull.kotlin-result:kotlin-result", version.ref = "result" }
 kotlin-result-coroutines = { module = "com.michael-bull.kotlin-result:kotlin-result-coroutines", version.ref = "result" }
@@ -49,5 +47,4 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 sqldelight = { id = "com.squareup.sqldelight", version.ref = "sqlDelight" }
 ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
-detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 jib = { id = "com.google.cloud.tools.jib", version.ref = "jib" }

@@ -1,7 +1,3 @@
-import io.gitlab.arturbosch.detekt.extensions.DetektExtension.Companion.DEFAULT_SRC_DIR_JAVA
-import io.gitlab.arturbosch.detekt.extensions.DetektExtension.Companion.DEFAULT_SRC_DIR_KOTLIN
-import io.gitlab.arturbosch.detekt.extensions.DetektExtension.Companion.DEFAULT_TEST_SRC_DIR_JAVA
-import io.gitlab.arturbosch.detekt.extensions.DetektExtension.Companion.DEFAULT_TEST_SRC_DIR_KOTLIN
 import io.ktor.plugin.features.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -12,7 +8,6 @@ plugins {
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.serialization)
   alias(libs.plugins.sqldelight)
-  alias(libs.plugins.detekt)
   alias(libs.plugins.ktor)
 }
 
@@ -118,27 +113,3 @@ ktor {
     // can also use DockerImageRegistry.dockerHub()
     // or just use local image and delete external registry
   }
-}
-
-allprojects {
-  apply {
-    plugin(rootProject.libs.plugins.detekt.get().pluginId)
-  }
-
-  dependencies {
-    detektPlugins(rootProject.libs.io.gitlab.arturbosch.detekt.formatting)
-  }
-
-  detekt {
-    source = files(
-      "src",
-      DEFAULT_SRC_DIR_JAVA,
-      DEFAULT_TEST_SRC_DIR_JAVA,
-      DEFAULT_SRC_DIR_KOTLIN,
-      DEFAULT_TEST_SRC_DIR_KOTLIN,
-    )
-    toolVersion = rootProject.libs.versions.detekt.get()
-    config = rootProject.files("config/detekt/detekt.yml")
-    parallel = true
-  }
-}
